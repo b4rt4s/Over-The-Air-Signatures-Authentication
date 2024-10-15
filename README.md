@@ -25,7 +25,7 @@ The system includes scripts for collecting signature data, extracting features, 
 
 Project uses following languages and technologies
 * Python 3.10.12
-* Mediapipe fork for GPU support https://github.com/riverzhou/mediapipe
+* Mediapipe fork with GPU support https://github.com/riverzhou/mediapipe
 * Ubuntu 22.04.1
 
 ## Development

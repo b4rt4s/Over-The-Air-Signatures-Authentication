@@ -1,21 +1,23 @@
-import cv2 
-import mediapipe as np
-import time
-import math
+import cv2
+import mediapipe as mp
 
-class handDetector():
-    def __init__(self, mode=False, maxHands=2, modelC=1, detectionCon=0.5, trackCon=0.5):
+
+class handDetector:
+    def __init__(
+        self, mode=False, maxHands=1, modelC=1, detectionCon=0.5, trackCon=0.5
+    ):
         self.mode = mode
         self.maxHands = maxHands
         self.modelC = modelC
         self.detectionCon = detectionCon
         self.trackCon = trackCon
 
-        self.npHands = np.solutions.hands
-        self.hands = self.npHands.Hands(self.mode, self.maxHands, self.modelC, self.detectionCon, self.trackCon)
-        self.npDraw = np.solutions.drawing_utils
+        self.mpHands = mp.solutions.hands
+        self.hands = self.mpHands.Hands(
+            self.mode, self.maxHands, self.modelC, self.detectionCon, self.trackCon
+        )
+        self.mpDraw = mp.solutions.drawing_utils
         self.tipIds = [4, 8, 12, 16, 20]
-
 
     def findHands(self, img, draw=True):
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -24,25 +26,23 @@ class handDetector():
         if self.results.multi_hand_landmarks:
             for handLMS in self.results.multi_hand_landmarks:
                 if draw:
-                    self.npDraw.draw_landmarks(img, handLMS, self.npHands.HAND_CONNECTIONS)
+                    self.mpDraw.draw_landmarks(
+                        img, handLMS, self.mpHands.HAND_CONNECTIONS
+                    )
         return img
-
 
     def findPosition(self, img, handNo=0, draw=True):
         self.lmlist = []
-
         if self.results.multi_hand_landmarks:
             myhand = self.results.multi_hand_landmarks[handNo]
             for id, lm in enumerate(myhand.landmark):
-                h, w, c = img.shape
+                h, w = img.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 self.lmlist.append([id, cx, cy])
 
                 if draw:
                     cv2.circle(img, (cx, cy), 7, (255, 0, 255), cv2.FILLED)
-
         return self.lmlist
-
 
     def fingerUp(self):
         finger = []
@@ -59,4 +59,3 @@ class handDetector():
             else:
                 finger.append(0)
         return finger
-    
