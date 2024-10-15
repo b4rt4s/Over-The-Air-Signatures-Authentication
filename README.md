@@ -31,8 +31,6 @@ Project uses following languages and technologies
 ### Quick start
 #### Setup project locally
 
-If you want to setup project locally
-
 1. Clone the repository:
 
    ```
