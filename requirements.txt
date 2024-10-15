@@ -1,1 +1,5 @@
-
+matplotlib==3.9.2
+numpy==2.1.2
+opencv_contrib_python==4.10.0.84
+pynput==1.7.7
+scipy==1.14.1
