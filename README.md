@@ -25,7 +25,7 @@ The system includes scripts for collecting signature data, extracting features, 
 
 Project uses following languages and technologies
 * Python 3.10.12
-* Fork of mediapipe from https://github.com/riverzhou/mediapipe
+* Mediapipe fork for GPU support https://github.com/riverzhou/mediapipe
 * Ubuntu 22.04.1
 
 ## Development
@@ -81,7 +81,7 @@ Project uses following languages and technologies
 1. Install mediapipe from https://github.com/riverzhou/mediapipe
 
 > [!WARNING]
-> Works only on Ubuntu 22.04
+> Works only on Ubuntu 22.04  
 > Install it globally (not in venv)
 
 2. Activate previous environment:
@@ -96,7 +96,7 @@ Project uses following languages and technologies
    cd /usr/lib/x86_64-linux-gnu/mediapipe/dist
    ```
 
-4. Install MediaPipe from a .whl file
+4. Install MediaPipe from a .whl file:
 
    ```
    python -m pip install mediapipe-0.10.1-cp310-cp310-linux_x86_64.whl
@@ -120,11 +120,11 @@ Project uses following languages and technologies
    ```
 
 > [!WARNING]
-> If ImportError: cannot import name 'python' from 'mediapipe.tasks.python'
+> If ImportError: cannot import name 'python' from 'mediapipe.tasks.python'  
 > There is a solution: https://github.com/google-ai-edge/mediapipe/issues/4657
 
 > [!WARNING]
-> If qt.qpa.events.reader: [heap] info appears
+> If qt.qpa.events.reader: [heap] info appears  
 > Paste export QT_LOGGING_RULES="qt.qpa.events.reader=false" in the console
 
 #### Run features extracting
