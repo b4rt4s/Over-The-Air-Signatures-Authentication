@@ -36,7 +36,7 @@ class handDetector:
         if self.results.multi_hand_landmarks:
             myhand = self.results.multi_hand_landmarks[handNo]
             for id, lm in enumerate(myhand.landmark):
-                h, w = img.shape
+                h, w, _ = img.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 self.lmlist.append([id, cx, cy])
 
