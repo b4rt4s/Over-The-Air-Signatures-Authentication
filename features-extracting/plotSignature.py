@@ -1,6 +1,5 @@
 import re
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 
 directory = int(input("Enter directory number to read: "))

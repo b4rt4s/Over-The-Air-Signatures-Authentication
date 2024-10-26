@@ -72,11 +72,11 @@ def process_directory(directory):
         with open(output_filename, "w") as f:
             for points, times in zip(xy_list2, times_list2):
                 for (x, y), time in zip(points, times):
-                    f.write(f"x: {x}, y: {y}, time: {time}\n")
+                    f.write(f"x: {x}, y: {y}, t: {time}\n")
                 f.write(f"BREAK\n")
 
 # Usuwanie punktów, które są zbyt blisko siebie
-def remove_close_points(points, times, min_distance=5):
+def remove_close_points(points, times, min_distance=4):
     cleaned_points = []
     cleaned_times = []
     points = np.array(points)
