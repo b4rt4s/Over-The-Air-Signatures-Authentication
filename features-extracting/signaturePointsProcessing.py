@@ -4,12 +4,8 @@ import numpy as np
 from itertools import chain
 import os
 
-# TO DO
-# 1. Dodanie godzin, dodanie sekund
-# 2. Zapisywanie normalnych do odpowiednich folderów na zdjęcia i podpisy
 # 3. Zapisywanie czystych do pliku do odpowiednich folderów
 # 4. Zapisywanie interpolacji do odpowiednich folderów
-# 5. Automatyzacja dla wszystkich podpisów.
 
 directory = int(input("Enter directory number to read: "))
 file_num = int(input("Enter file number to read: "))
@@ -40,8 +36,8 @@ with open(filename, "r") as file:
             xy_list.append((x_coord, y_coord))
 
             time_str = match.group(4)
-            minutes, seconds, milliseconds = map(int, time_str.split(":"))
-            time_tuple = (minutes, seconds, milliseconds)
+            minutes, seconds, microseconds = map(int, time_str.split(":"))
+            time_tuple = (minutes, seconds, microseconds)
             times_list.append(time_tuple)
         else:
             xy_list.append((-1, -1))
@@ -187,8 +183,8 @@ output_filename = os.path.join(directory_path, f"processed_sign_{file_num}.txt")
 # Zapis do pliku txt
 with open(output_filename, "w") as f:
     for points, times in zip(xy_list2, times_list2):
-        for (x, y), (minutes, seconds, milliseconds) in zip(points, times):
-            f.write(f"x: {x}, y: {-y}, time: {minutes}:{seconds}:{milliseconds}\n")
+        for (x, y), (minutes, seconds, microseconds) in zip(points, times):
+            f.write(f"x: {x}, y: {-y}, time: {minutes}:{seconds}:{microseconds}\n")
         f.write(f"BREAK\n")
 
 cleaned_xy_list = list(chain.from_iterable(xy_list2))
