@@ -104,6 +104,8 @@ Project uses following languages and technologies
 
 #### Run signatures collecting
 
+Used in part the code from: https://medium.com/@sarves021999/air-signature-creation-using-opencv-40f1536ecb8b
+
 > [!WARNING]
 > Install mediapipe before you start collecting signatures!
 

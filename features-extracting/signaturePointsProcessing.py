@@ -4,6 +4,13 @@ import numpy as np
 from itertools import chain
 import os
 
+# TO DO
+# 1. Dodanie godzin, dodanie sekund
+# 2. Zapisywanie normalnych do odpowiednich folderów na zdjęcia i podpisy
+# 3. Zapisywanie czystych do pliku do odpowiednich folderów
+# 4. Zapisywanie interpolacji do odpowiednich folderów
+# 5. Automatyzacja dla wszystkich podpisów.
+
 directory = int(input("Enter directory number to read: "))
 file_num = int(input("Enter file number to read: "))
 
@@ -64,33 +71,33 @@ def remove_close_points(points, times, min_distance=5):
 def interpolate_points(points, times, min_distance=10, max_distance=100):
     """
     Interpoluje punkty i czasy, gdy odległość między kolejnymi punktami przekracza max_distance.
-    Uwzględnia przeskoki między minutami, sekundami i milisekundami, w tym cofnięcia czasu.
+    Uwzględnia przeskoki między minutami, sekundami i mikrosekundami, w tym cofnięcia czasu.
     """
     interpolated_points = []
     interpolated_times = []
 
     def time_in_microseconds(time):
-        """Konwertuje czas [minuty, sekundy, milisekundy] na mikrosekundy."""
+        """Konwertuje czas [minuty, sekundy, mikrosekundy] na mikrosekundy."""
         return time[0] * 60 * 1_000_000 + time[1] * 1_000_000 + time[2]
 
     def time_from_microseconds(us):
-        """Konwertuje czas z mikrosekund na [minuty, sekundy, milisekundy]."""
+        """Konwertuje czas z mikrosekund na [minuty, sekundy, mikrosekundy]."""
         minutes = us // (60 * 1_000_000)
         us %= (60 * 1_000_000)
         seconds = us // 1_000_000
-        milliseconds = us % 1_000_000
-        
+        microseconds = (us % 1_000_000)  # Konwersja mikrosekund na mikrosekundy
+            
         # Naprawa przeskoku do 60
         if minutes >= 60:
             minutes = 0
         
-        return [int(minutes), int(seconds), int(milliseconds)]
+        return [int(minutes), int(seconds), int(microseconds)]
 
     for i in range(len(points) - 1):
         start_point = points[i]
         end_point = points[i + 1]
 
-        # Oryginalny czas w formacie [minuty, sekundy, milisekundy]
+        # Oryginalny czas w formacie [minuty, sekundy, mikrosekundy]
         start_time = times[i]
         end_time = times[i + 1]
 
@@ -132,10 +139,6 @@ def interpolate_points(points, times, min_distance=10, max_distance=100):
     interpolated_times.append(times[-1])
 
     return interpolated_points, interpolated_times
-
-
-
-
 
 # Podział punktów na grupy punktów oznaczające przerwy w pisaniu
 partial_xy_list = []

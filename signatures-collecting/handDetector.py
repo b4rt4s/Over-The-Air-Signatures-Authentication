@@ -46,13 +46,16 @@ class handDetector:
 
     def fingerUp(self):
         finger = []
+        
         # Kciuk
+        # Thumb
         if self.lmlist[self.tipIds[0]][1] < self.lmlist[self.tipIds[0] - 1][1]:
             finger.append(0)
         else:
             finger.append(1)
 
         # Pozostałe cztery palce
+        # The other four fingers
         for id in range(1, 5):
             if self.lmlist[self.tipIds[id]][2] < self.lmlist[self.tipIds[id] - 2][2]:
                 finger.append(1)
