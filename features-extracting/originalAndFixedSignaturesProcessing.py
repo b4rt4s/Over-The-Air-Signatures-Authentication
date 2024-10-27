@@ -30,7 +30,7 @@ def process_text_file(filename, original_signs_dir, fixed_signs_dir):
         for line in file:
             line = line.strip()
             match = re.search(
-                r"id: (-?\d+), x: (-?\d+), y: (-?\d+), t: (\d+:\d+:\d+)", line
+                r"id: (-?\d+), x: (-?\d+), y: (-?\d+), time: (\d+:\d+:\d+)", line
             )
             if match:
                 x_coord = int(match.group(2))

@@ -74,6 +74,28 @@ def process_directory(directory):
                 for (x, y), time in zip(points, times):
                     f.write(f"x: {x}, y: {y}, t: {time}\n")
                 f.write(f"BREAK\n")
+        
+        xy_list3 = []
+        times_list3 = []
+
+        for xy_points, time_points in zip(xy_list2, times_list2):
+            interpolated_points, interpolated_times = interpolate_points(xy_points, time_points)
+            xy_list3.append(interpolated_points)
+            times_list3.append(interpolated_times)
+
+        # Wyodrębnienie nazwy pliku z obiektu pliku
+        output_filename2 = os.path.join(parent_dir, f"subject{directory}", "interpolated-signs", f"interpolated-{filename}")
+
+        # Ensure the output directory exists
+        os.makedirs(os.path.dirname(output_filename2), exist_ok=True)
+
+        # Zapis do pliku txt
+        with open(output_filename2, "w") as f:
+            for points, times in zip(xy_list3, times_list3):
+                for (x, y), time in zip(points, times):
+                    f.write(f"x: {x}, y: {y}, t: {time}\n")
+                f.write(f"BREAK\n")
+
 
 # Usuwanie punktów, które są zbyt blisko siebie
 def remove_close_points(points, times, min_distance=4):
@@ -94,6 +116,47 @@ def remove_close_points(points, times, min_distance=4):
             )  # Dodaje pierwszy punkt bez sprawdzania
             cleaned_times.append(time.tolist())
     return cleaned_points, cleaned_times
+
+def interpolate_points(points, times, min_distance=10, max_distance=100):
+    interpolated_points = []
+    interpolated_times = []
+
+    for i in range(len(points) - 1):
+        start_point = points[i]
+        end_point = points[i + 1]
+
+        start_time = times[i]
+        end_time = times[i + 1]
+
+        # Obliczenie odległości między punktami
+        distance = np.linalg.norm(np.array(start_point) - np.array(end_point))
+
+        # Dodanie początkowego punktu i czasu
+        interpolated_points.append([round(start_point[0]), round(start_point[1])])
+        interpolated_times.append(round(start_time))
+
+        if distance > min_distance and distance < max_distance:
+            # Obliczanie liczby punktów do interpolacji
+            num_points = int(distance // min_distance)
+
+            for j in range(1, num_points + 1):
+                # Interpolacja liniowa dla punktów
+                interp_point = [
+                    start_point[0] + j * (end_point[0] - start_point[0]) / (num_points + 1),
+                    start_point[1] + j * (end_point[1] - start_point[1]) / (num_points + 1),
+                ]
+
+                # Interpolacja liniowa dla czasu w mikrosekundach
+                interp_time = start_time + j * (end_time - start_time) / (num_points + 1)
+
+                interpolated_points.append([round(interp_point[0]), round(interp_point[1])])
+                interpolated_times.append(round(interp_time))
+
+    # Dodaj ostatni punkt i czas
+    interpolated_points.append([round(points[-1][0]), round(points[-1][1])])
+    interpolated_times.append(round(times[-1]))
+
+    return interpolated_points, interpolated_times
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

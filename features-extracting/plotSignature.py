@@ -62,10 +62,36 @@ with open(cleared_filename, "r") as file:
                 y_coord = int(match.group(2))
                 cleared_xy_list.append((x_coord, y_coord))
 
+# Find the subfolder starting with 'interpolated-signs'
+interpolated_subfolders = [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f)) and f.startswith('interpolated-signs')]
+if len(interpolated_subfolders) == 0:
+    print("No subfolders starting with 'interpolated-signs' found.")
+    exit(1)
+interpolated_subfolder = interpolated_subfolders[0]
+
+interpolated_subfolder_path = os.path.join(directory_path, interpolated_subfolder)
+interpolated_filename = os.path.join(interpolated_subfolder_path, f"interpolated-sign_{file_num}.txt")
+
+if not os.path.isfile(interpolated_filename):
+    print(f"File {interpolated_filename} does not exist.")
+    exit(1)
+
+interpolated_xy_list = []
+
+with open(interpolated_filename, "r") as file:
+    for line in file:
+        line = line.strip()
+        if line != "BREAK":
+            match = re.search(r"x: (-?\d+), y: (-?\d+)", line)
+            if match:
+                x_coord = int(match.group(1))
+                y_coord = int(match.group(2))
+                interpolated_xy_list.append((x_coord, y_coord))
+
 # Create figure and axes
 fig, axs = plt.subplots(
-    3, 1, figsize=(10, 15)
-)  # 3 plots vertically, 1 column, figure size 10x15 inches
+    4, 1, figsize=(10, 20)
+)  # 4 plots vertically, 1 column, figure size 10x20 inches
 
 # Plot 1: Original points from fixed-signs
 x_vals_fixed, y_vals_fixed = zip(*fixed_xy_list)  # Unpacking list into x and y
@@ -82,12 +108,20 @@ axs[1].set_xlabel("x - axis")
 axs[1].set_ylabel("y - axis")
 
 # Plot 3: Combined points from both folders
-axs[2].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
-axs[2].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
-axs[2].set_title("Combined Points from fixed-signs and cleared-signs")
+x_vals_interpolated, y_vals_interpolated = zip(*interpolated_xy_list)  # Unpacking list into x and y
+axs[2].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1)
+axs[2].set_title("Original Points from interpolated-signs")
 axs[2].set_xlabel("x - axis")
 axs[2].set_ylabel("y - axis")
-axs[2].legend()
+
+# Plot 4: Combined points from both folders
+axs[3].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
+axs[3].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
+axs[3].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1, label="interpolated-signs")
+axs[3].set_title("Combined Points from fixed-signs, cleared-signs and interpolated-signs")
+axs[3].set_xlabel("x - axis")
+axs[3].set_ylabel("y - axis")
+axs[3].legend()
 
 # Set appropriate spacing between plots
 plt.tight_layout()
