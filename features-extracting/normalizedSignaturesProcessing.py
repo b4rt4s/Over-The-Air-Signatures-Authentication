@@ -27,15 +27,20 @@ def process_directory(directory):
         # Normalizacja punktów do (0, 0)
         if xy_list and xy_list[0] != "BREAK":
             x_offset, y_offset = xy_list[0]
+            t_offset = times_list[0]
             normalized_xy_list = []
-            for point in xy_list:
+            normalized_times_list = []
+            for point, time in zip(xy_list, times_list):
                 if point == "BREAK":
                     normalized_xy_list.append("BREAK")
+                    normalized_times_list.append("BREAK")
                 else:
                     x, y = point
-                    normalized_xy_list.append((x - x_offset, y - y_offset))
+                    normalized_xy_list.append((x - x_offset, y - y_offset)) # pdejmujemy od punktów wartości pierwszego punktu
+                    normalized_times_list.append(time - t_offset) # odejmujemy od czasów wartości pierwszego czasu
         else:
             normalized_xy_list = xy_list
+            normalized_times_list = times_list
 
         # Wyodrębnienie nazwy pliku z obiektu pliku i zamiana 'interpolated-sign' na 'normalized-sign'
         file_number = os.path.splitext(filename)[0].replace('interpolated-sign', 'normalized-sign')
@@ -46,7 +51,7 @@ def process_directory(directory):
 
         # Zapis do pliku txt
         with open(output_filename, "w") as f:
-            for points, times in zip(normalized_xy_list, times_list):
+            for points, times in zip(normalized_xy_list, normalized_times_list):
                 if points == "BREAK":
                     f.write("BREAK\n")
                 else:
