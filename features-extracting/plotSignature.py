@@ -88,10 +88,36 @@ with open(interpolated_filename, "r") as file:
                 y_coord = int(match.group(2))
                 interpolated_xy_list.append((x_coord, y_coord))
 
+# Find the subfolder starting with 'normalized-signs'
+normalized_subfolders = [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f)) and f.startswith('normalized-signs')]
+if len(normalized_subfolders) == 0:
+    print("No subfolders starting with 'normalized-signs' found.")
+    exit(1)
+normalized_subfolder = normalized_subfolders[0]
+
+normalized_subfolder_path = os.path.join(directory_path, normalized_subfolder)
+normalized_filename = os.path.join(normalized_subfolder_path, f"normalized-sign_{file_num}.txt")
+
+if not os.path.isfile(normalized_filename):
+    print(f"File {normalized_filename} does not exist.")
+    exit(1)
+
+normalized_xy_list = []
+
+with open(normalized_filename, "r") as file:
+    for line in file:
+        line = line.strip()
+        if line != "BREAK":
+            match = re.search(r"x: (-?\d+), y: (-?\d+)", line)
+            if match:
+                x_coord = int(match.group(1))
+                y_coord = int(match.group(2))
+                normalized_xy_list.append((x_coord, y_coord))
+
 # Create figure and axes
 fig, axs = plt.subplots(
-    4, 1, figsize=(10, 20)
-)  # 4 plots vertically, 1 column, figure size 10x20 inches
+    5, 1, figsize=(10, 25)
+)  # 5 plots vertically, 1 column, figure size 10x25 inches
 
 # Plot 1: Original points from fixed-signs
 x_vals_fixed, y_vals_fixed = zip(*fixed_xy_list)  # Unpacking list into x and y
@@ -107,21 +133,29 @@ axs[1].set_title("Original Points from cleared-signs")
 axs[1].set_xlabel("x - axis")
 axs[1].set_ylabel("y - axis")
 
-# Plot 3: Combined points from both folders
+# Plot 3: Original points from interpolated-signs
 x_vals_interpolated, y_vals_interpolated = zip(*interpolated_xy_list)  # Unpacking list into x and y
 axs[2].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1)
 axs[2].set_title("Original Points from interpolated-signs")
 axs[2].set_xlabel("x - axis")
 axs[2].set_ylabel("y - axis")
 
-# Plot 4: Combined points from both folders
-axs[3].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
-axs[3].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
-axs[3].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1, label="interpolated-signs")
-axs[3].set_title("Combined Points from fixed-signs, cleared-signs and interpolated-signs")
+# Plot 4: Original points from normalized-signs
+x_vals_normalized, y_vals_normalized = zip(*normalized_xy_list)  # Unpacking list into x and y
+axs[3].scatter(x_vals_normalized, y_vals_normalized, marker="o", color="purple", s=1)
+axs[3].set_title("Original Points from normalized-signs")
 axs[3].set_xlabel("x - axis")
 axs[3].set_ylabel("y - axis")
-axs[3].legend()
+
+# Plot 5: Combined points from all folders
+axs[4].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
+axs[4].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
+axs[4].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1, label="interpolated-signs")
+axs[4].scatter(x_vals_normalized, y_vals_normalized, marker="o", color="purple", s=1, label="normalized-signs")
+axs[4].set_title("Combined Points from fixed-signs, cleared-signs, interpolated-signs, and normalized-signs")
+axs[4].set_xlabel("x - axis")
+axs[4].set_ylabel("y - axis")
+axs[4].legend()
 
 # Set appropriate spacing between plots
 plt.tight_layout()
