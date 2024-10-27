@@ -98,7 +98,7 @@ def process_directory(directory):
 
 
 # Usuwanie punktów, które są zbyt blisko siebie
-def remove_close_points(points, times, min_distance=4):
+def remove_close_points(points, times, min_distance=5): # Manipulacja dokładnością usuwania punktów
     cleaned_points = []
     cleaned_times = []
     points = np.array(points)
@@ -117,7 +117,7 @@ def remove_close_points(points, times, min_distance=4):
             cleaned_times.append(time.tolist())
     return cleaned_points, cleaned_times
 
-def interpolate_points(points, times, min_distance=10, max_distance=100):
+def interpolate_points(points, times, min_distance=10, max_distance=100): # Manipulacja dokładnością interpolacji
     interpolated_points = []
     interpolated_times = []
 
