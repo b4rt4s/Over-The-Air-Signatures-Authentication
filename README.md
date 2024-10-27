@@ -159,17 +159,27 @@ Used in part the code from: https://medium.com/@sarves021999/air-signature-creat
 
 6. Enter "range" to process specific subjects or "all" to process all subjects.
 
-7. (Optional) Run plotSignature.py to plot original, cleared and interpolated signature.
+7. Run normalizedSignaturesProcessing.py:
+
+   ```
+   python3 normalizedSignaturesProcessing.py
+   ```
+
+8. Enter "range" to process specific subjects or "all" to process all subjects.
+
+9. (Optional) Run plotSignature.py to plot original, cleared and interpolated signature.
 
    ```
    python3 plotSignature.py
    ```
 
-8. Run featuresExtracting.py:
+10. Run featuresExtracting.py:
 
    ```
    python3 featuresExtracting.py
    ```
+
+11. Enter "range" to process specific subjects or "all" to process all subjects.
 
 ## Author
 
