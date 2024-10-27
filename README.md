@@ -143,10 +143,32 @@ Used in part the code from: https://medium.com/@sarves021999/air-signature-creat
    sudo apt-get install python3-tk
    ```
 
-3. Run SignaturePointsProcessing.py:
+3. Run originalAndFixedSignaturesProcessing.py:
 
    ```
-   python3 SignaturePointsProcessing.py
+   python3 originalAndFixedSignaturesProcessing.py
+   ```
+
+4. Enter "range" to process specific subjects or "all" to process all subjects.
+
+5. Run clearedAndInterpolatedSignaturesProcessing.py:
+
+   ```
+   python3 clearedAndInterpolatedSignaturesProcessing.py
+   ```
+
+6. Enter "range" to process specific subjects or "all" to process all subjects.
+
+7. (Optional) Run plotSignature.py to plot original, cleared and interpolated signature.
+
+   ```
+   python3 plotSignature.py
+   ```
+
+8. Run featuresExtracting.py:
+
+   ```
+   python3 featuresExtracting.py
    ```
 
 ## Author
