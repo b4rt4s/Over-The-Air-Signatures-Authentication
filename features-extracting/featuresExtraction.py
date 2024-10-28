@@ -28,7 +28,7 @@ def average_speed(points, times):
 def split_points_and_times(xy_list, times_list, num_parts=50):
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
-    print(len(xy_list))
+
     N = len(xy_list) # np. 505
     sublists = []
     base_size = N // num_parts # np. 10
@@ -63,8 +63,10 @@ def process_directory(directory):
             all_filenames.append(f)
     
     # Losowo wybierz 10 plików
-    # selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
-    selected_filenames = ["normalized-sign_14.txt"]
+    selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
+    # selected_filenames = ["normalized-sign_14.txt"]
+
+    average_speed_list = []
 
     for filename in selected_filenames:
         xy_list = []
@@ -93,12 +95,17 @@ def process_directory(directory):
         # Podział punktów i czasów
         sublists = split_points_and_times(xy_list, times_list)
 
+        part_average_speed_list = []
+
         # Wypisz podlisty tylko dla pierwszego wybranego pliku
-        if filename == selected_filenames[0]:
-            for i, (points, times) in enumerate(sublists):
-                print(f"Sublist {i} for {filename}:")
-                print(f"Points: {points}")
-                print(f"Times: {times}")
+        for i, (points, times) in enumerate(sublists):
+            average_speed_val = average_speed(points, times)
+            print(f"Sublist {i} for {filename}:")
+            print(f"Average speed: {average_speed_val}")
+            print(f"Points: {points}")
+            print(f"Times: {times}")
+
+    average_speed_list.append(part_average_speed_list)
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
