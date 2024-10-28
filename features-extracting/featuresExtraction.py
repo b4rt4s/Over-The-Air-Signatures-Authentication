@@ -2,6 +2,7 @@ import re
 import os
 import numpy as np
 import random
+import pandas as pd
 
 def average_speed(points, times):
     total_distance = 0
@@ -104,8 +105,9 @@ def process_directory(directory):
             print(f"Average speed: {average_speed_val}")
             print(f"Points: {points}")
             print(f"Times: {times}")
+            part_average_speed_list.append(average_speed_val)
 
-    average_speed_list.append(part_average_speed_list)
+        average_speed_list.append(part_average_speed_list)
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
