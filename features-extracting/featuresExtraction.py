@@ -129,20 +129,20 @@ def process_directory(directory):
         for line in profile_data:
             profile_file.write(line + "\n")
 
-    # # Sortowanie nazw plików według numerów w ich nazwach
-    # sorted_filenames = sorted(selected_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
+    # Sortowanie nazw plików według numerów w ich nazwach
+    sorted_filenames = sorted(selected_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
     
-    # # Sortowanie listy średnich prędkości zgodnie z posortowanymi nazwami plików
-    # sorted_average_speed_list = [x for _, x in sorted(zip(selected_filenames, average_speed_list), key=lambda pair: int(re.search(r'\d+', pair[0]).group()))]
+    # Sortowanie listy średnich prędkości zgodnie z posortowanymi nazwami plików
+    sorted_average_speed_list = [x for _, x in sorted(zip(selected_filenames, average_speed_list), key=lambda pair: int(re.search(r'\d+', pair[0]).group()))]
 
-    # # Tworzenie DataFrame z wynikami
-    # result_df = pd.DataFrame(sorted_average_speed_list).transpose()
-    # result_df.columns = ["sign_{}".format(int(re.search(r'\d+', name).group())) for name in sorted_filenames]
-    # result_df.index = ["t_{}".format(i) for i in range(len(result_df))]
+    # Tworzenie DataFrame z wynikami
+    result_df = pd.DataFrame(sorted_average_speed_list).transpose()
+    result_df.columns = ["sign_{}".format(int(re.search(r'\d+', name).group())) for name in sorted_filenames]
+    result_df.index = ["t_{}".format(i) for i in range(len(result_df))]
     
-    # # Wypisywanie wyników z dokładnością do 20 miejsc po przecinku
-    # pd.set_option('display.float_format', lambda x: f'{x:.20f}')
-    # print(result_df)
+    # Wypisywanie wyników z dokładnością do 20 miejsc po przecinku
+    pd.set_option('display.float_format', lambda x: f'{x:.20f}')
+    print(result_df)
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
