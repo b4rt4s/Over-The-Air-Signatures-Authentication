@@ -36,7 +36,7 @@ def process_directory(directory):
                     normalized_times_list.append("BREAK")
                 else:
                     x, y = point
-                    normalized_xy_list.append((x - x_offset, y - y_offset)) # pdejmujemy od punktów wartości pierwszego punktu
+                    normalized_xy_list.append((x - x_offset, y - y_offset)) # odejmujemy od punktów wartości pierwszego punktu
                     normalized_times_list.append(time - t_offset) # odejmujemy od czasów wartości pierwszego czasu
         else:
             normalized_xy_list = xy_list
