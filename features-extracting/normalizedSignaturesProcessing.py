@@ -2,7 +2,7 @@ import re
 import os
 
 def process_directory(directory):
-    subject_dir = os.path.join(parent_dir, f"subject{directory}", "interpolated-signs")
+    subject_dir = os.path.join(parent_dir, f"subject{directory}", "interpolated-signs") # Manipulacja wyborem folderu, z którego chcemy normalizować cechy
 
     for filename in os.listdir(subject_dir):
         xy_list = []
