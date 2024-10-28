@@ -65,7 +65,7 @@ def process_directory(directory):
     
     # Losowo wybierz 10 plików
     selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
-    # selected_filenames = ["normalized-sign_14.txt"]
+    # selected_filenames = ["normalized-sign_13.txt", "normalized-sign_14.txt", "normalized-sign_15.txt"]
 
     average_speed_list = []
 
@@ -98,7 +98,6 @@ def process_directory(directory):
 
         part_average_speed_list = []
 
-        # Wypisz podlisty tylko dla pierwszego wybranego pliku
         for i, (points, times) in enumerate(sublists):
             average_speed_val = average_speed(points, times)
             print(f"Sublist {i} for {filename}:")
@@ -108,6 +107,21 @@ def process_directory(directory):
             part_average_speed_list.append(average_speed_val)
 
         average_speed_list.append(part_average_speed_list)
+
+    # Sortowanie nazw plików według numerów w ich nazwach
+    sorted_filenames = sorted(selected_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
+    
+    # Sortowanie listy średnich prędkości zgodnie z posortowanymi nazwami plików
+    sorted_average_speed_list = [x for _, x in sorted(zip(selected_filenames, average_speed_list), key=lambda pair: int(re.search(r'\d+', pair[0]).group()))]
+
+    # Tworzenie DataFrame z wynikami
+    result_df = pd.DataFrame(sorted_average_speed_list).transpose()
+    result_df.columns = ["sign_{}".format(int(re.search(r'\d+', name).group())) for name in sorted_filenames]
+    result_df.index = ["t_{}".format(i) for i in range(len(result_df))]
+    
+    # Wypisywanie wyników z dokładnością do 20 miejsc po przecinku
+    pd.set_option('display.float_format', lambda x: f'{x:.20f}')
+    print(result_df)
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
