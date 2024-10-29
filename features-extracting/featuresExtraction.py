@@ -35,6 +35,134 @@ def total_path_length(points):
         total_distance += distance
     return total_distance
 
+def total_signing_time(times):
+    if not times:
+        return 0
+    total_time = (times[-1] - times[0]) / 1e6  # Convert to seconds
+    return total_time
+
+def average_acceleration(points, times):
+    if len(points) < 3 or len(times) < 3:
+        return 0  # Potrzebujemy przynajmniej trzy punkty do obliczenia przyspieszenia
+    
+    velocities = []
+    velocities_times = []
+    # Obliczanie prędkości między kolejnymi punktami
+    for i in range(1, len(points)):
+        x1, y1 = points[i - 1]
+        x2, y2 = points[i]
+        t1 = times[i - 1] / 1000000  # Konwersja na sekundy
+        t2 = times[i] / 1000000
+        delta_t = t2 - t1
+        if delta_t == 0:
+            continue  # Unikamy dzielenia przez zero
+        
+        distance = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        velocity = distance / delta_t
+        velocities.append(velocity)
+        velocities_times.append((t1 + t2) / 2)  # Czas środkowy dla prędkości
+    
+    if len(velocities) < 2:
+        return 0  # Nie można obliczyć przyspieszenia z mniej niż dwóch prędkości
+    
+    total_acceleration = 0
+    count = 0
+    # Obliczanie przyspieszenia między kolejnymi prędkościami
+    for i in range(1, len(velocities)):
+        v1 = velocities[i - 1]
+        v2 = velocities[i]
+        t1 = velocities_times[i - 1]
+        t2 = velocities_times[i]
+        delta_t = t2 - t1
+        if delta_t == 0:
+            continue  # Unikamy dzielenia przez zero
+        acceleration = (v2 - v1) / delta_t
+        total_acceleration += abs(acceleration)
+        count += 1
+    
+    if count == 0:
+        return 0  # Unikamy dzielenia przez zero
+    
+    average_acceleration = total_acceleration / count
+    return average_acceleration
+
+def average_velocity_x(points, times):
+    total_velocity_x = 0
+    count = 0
+    for i in range(1, len(points)):
+        x1 = points[i - 1][0]
+        x2 = points[i][0]
+        t1 = times[i - 1] / 1000000
+        t2 = times[i] / 1000000
+        delta_t = t2 - t1
+        if delta_t == 0:
+            continue
+        velocity_x = (x2 - x1) / delta_t
+        total_velocity_x += velocity_x
+        count += 1
+    return total_velocity_x / count if count > 0 else 0
+
+def average_velocity_y(points, times):
+    total_velocity_y = 0
+    count = 0
+    for i in range(1, len(points)):
+        y1 = points[i - 1][1]
+        y2 = points[i][1]
+        t1 = times[i - 1] / 1000000  # Konwersja mikrosekund na sekundy
+        t2 = times[i] / 1000000
+        delta_t = t2 - t1
+        if delta_t == 0:
+            continue
+        velocity_y = (y2 - y1) / delta_t
+        total_velocity_y += velocity_y
+        count += 1
+    return total_velocity_y / count if count > 0 else 0
+
+def average_cos_alpha(points):
+    total_cos_alpha = 0
+    count = 0
+    for i in range(1, len(points)):
+        dx = points[i][0] - points[i - 1][0]
+        dy = points[i][1] - points[i - 1][1]
+        distance = np.hypot(dx, dy)
+        if distance == 0:
+            continue
+        cos_alpha = dx / distance
+        total_cos_alpha += cos_alpha
+        count += 1
+    return total_cos_alpha / count if count > 0 else 0
+
+def average_sin_alpha(points):
+    total_sin_alpha = 0
+    count = 0
+    for i in range(1, len(points)):
+        dx = points[i][0] - points[i - 1][0]
+        dy = points[i][1] - points[i - 1][1]
+        distance = np.hypot(dx, dy)
+        if distance == 0:
+            continue
+        sin_alpha = dy / distance
+        total_sin_alpha += sin_alpha
+        count += 1
+    return total_sin_alpha / count if count > 0 else 0
+
+def average_distance_from_origin(points):
+    if not points:
+        return 0
+    total_distance = 0
+    for x, y in points:
+        distance = np.hypot(x, y)
+        total_distance += distance
+    return total_distance / len(points)
+
+def path_efficiency(points):
+    if len(points) < 2:
+        return 1
+    start = points[0]
+    end = points[-1]
+    direct_distance = np.sqrt((end[0] - start[0])**2 + (end[1] - start[1])**2)
+    total_path = total_path_length(points)
+    return direct_distance / total_path if total_path != 0 else 0
 
 def split_points_and_times(xy_list, times_list, num_parts=100): # Manipulacja liczbą podziałów na czasy w danym podpisie
     if len(xy_list) != len(times_list):
@@ -89,6 +217,8 @@ def process_directory(directory):
     Struktura: [Podpis1:[cecha1_t1, cecha1_t2, cecha1_t3, ...], Podpis2:[cecha1_t1, cecha1_t2, cecha1_t3, ...], ...]
     '''
     average_speed_list_for_selected_signs = []
+    total_path_length_list_for_selected_signs = []
+    average_acceleration_list_for_selected_signs = []
 
     for filename in sorted_filenames:
         xy_list = []
@@ -124,10 +254,16 @@ def process_directory(directory):
         struktura: [cecha1_t1, cecha1_t2, cecha1_t3, ...]
         '''
         average_speed_list_for_sign = []
+        total_path_length_list_for_sign = []
+        average_acceleration_list_for_sign = []
 
         for i, (points, times) in enumerate(sublists):
             average_speed_val = average_speed(points, times)
             average_speed_list_for_sign.append(average_speed_val)
+            total_path_length_val = total_path_length(points)
+            total_path_length_list_for_sign.append(total_path_length_val)
+            average_acceleration_val = average_acceleration(points, times)
+            average_acceleration_list_for_sign.append(average_acceleration_val)
             # print(f"Sublist {i} for {filename}:")
             # print(f"Average speed: {average_speed_val}")
             # print(f"Points: {points}")
@@ -152,22 +288,39 @@ def process_directory(directory):
         extracted_features_filename = os.path.join(extracted_features_dir, f"extracted-features-{file_number}.txt")
         with open(extracted_features_filename, "w") as feature_file:
             for i in range(len(average_speed_list_for_sign)):
-                feature_file.write(f"{average_speed_list_for_sign[i]}\n") # Tu dopisujemy cechy
+                feature_file.write(f"{average_speed_list_for_sign[i]}, {total_path_length_list_for_sign[i]}, {average_acceleration_list_for_sign[i]}\n") # Tu dopisujemy cechy
 
         if filename in selected_filenames:
             average_speed_list_for_selected_signs.append(average_speed_list_for_sign)
+            total_path_length_list_for_selected_signs.append(total_path_length_list_for_sign)
+            average_acceleration_list_for_selected_signs.append(average_acceleration_list_for_sign)
 
-    #ranspose the list of average speeds to get lists of speeds for each time point
+    # Transpose the list of average speeds and total path lengths to get lists for each time point
     transposed_average_speed_list = list(map(list, zip(*average_speed_list_for_selected_signs)))
+    transposed_total_path_length_list = list(map(list, zip(*total_path_length_list_for_selected_signs)))
+    transposed_average_acceleration_list = list(map(list, zip(*average_acceleration_list_for_selected_signs)))
+
     # for i in transposed_average_speed_list:
-    #     print(i)
+    #    print(i)
 
     # Prepare the data to be saved
+    '''
+    Tabelka z danymi profilu użytkownika
+    t0: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
+    t1: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
+    ...
+    t100: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
+    '''
     profile_data = []
-    for i, speeds in enumerate(transposed_average_speed_list):
+    for i, (speeds, lengths, accelerations) in enumerate(zip(transposed_average_speed_list, transposed_total_path_length_list, 
+                                                             transposed_average_acceleration_list)):
         mean_speed = np.mean(speeds)
         std_speed = np.std(speeds)
-        profile_data.append(f"t_{i}: Mean speed: {mean_speed}, Standard deviation: {std_speed}")
+        mean_length = np.mean(lengths)
+        std_length = np.std(lengths)
+        mean_acceleration = np.mean(accelerations)
+        std_acceleration = np.std(accelerations)
+        profile_data.append(f"{mean_speed}, {std_speed}, {mean_length}, {std_length}, {mean_acceleration}, {std_acceleration}")
 
     # Save the data to a file within the profiles directory
     profiles_dir = os.path.join(parent_dir, "profiles")
