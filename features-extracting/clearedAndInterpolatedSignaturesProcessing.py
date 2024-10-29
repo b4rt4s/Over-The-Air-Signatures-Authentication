@@ -30,13 +30,14 @@ def process_directory(directory):
         full_xy_list = []
 
         for xy in xy_list:
-            if xy != "BREAK":
-                partial_xy_list.append(xy)
-            elif partial_xy_list != []:
-                full_xy_list.append(partial_xy_list)
-                partial_xy_list = []
+            if xy == "BREAK":
+                if partial_xy_list:  # Sprawdzenie, czy lista nie jest pusta przed dodaniem
+                    full_xy_list.append(partial_xy_list)
+                    partial_xy_list = []  # Resetowanie listy częściowej
+            else:
+                partial_xy_list.append(xy)  # Dodawanie elementów, które nie są "BREAK"
 
-        if full_xy_list == []:
+        if partial_xy_list:  # Dodanie ostatniej listy, jeśli nie była pusta
             full_xy_list.append(partial_xy_list)
 
         # Podział czasów na grupy czasów oznaczające przerwy w pisaniu
@@ -44,13 +45,14 @@ def process_directory(directory):
         full_times_list = []
 
         for time in times_list:
-            if time != "BREAK":
+            if time == "BREAK":
+                if partial_times_list:
+                    full_times_list.append(partial_times_list)
+                    partial_times_list = []
+            else:
                 partial_times_list.append(time)
-            elif partial_times_list != []:
-                full_times_list.append(partial_times_list)
-                partial_times_list = []
 
-        if full_times_list == []:
+        if partial_times_list:
             full_times_list.append(partial_times_list)
 
         xy_list2 = []

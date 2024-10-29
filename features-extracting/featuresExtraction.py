@@ -15,18 +15,28 @@ def average_speed(points, times):
         total_distance += distance
     
     # Obliczanie całkowitego czasu
-    total_time = times[-1] - times[0]
+    total_time = (times[-1] - times[0]) / 1000000
     
     # Unikamy dzielenia przez zero
     if total_time == 0:
         return 0
     
-    # Obliczanie średniej szybkości
+    # Obliczanie średniej szybkości w jednostkach na sekundę
     average_speed = total_distance / total_time
     
     return average_speed
 
-def split_points_and_times(xy_list, times_list, num_parts=50): # Manipulacja liczbą podziałów na czasy w danym podpisie
+def total_path_length(points):
+    total_distance = 0
+    for i in range(1, len(points)):
+        x1, y1 = points[i-1]
+        x2, y2 = points[i]
+        distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        total_distance += distance
+    return total_distance
+
+
+def split_points_and_times(xy_list, times_list, num_parts=100): # Manipulacja liczbą podziałów na czasy w danym podpisie
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
 
@@ -56,25 +66,36 @@ def process_directory(directory):
         "signatures-database",
     )
     subject_dir = os.path.join(parent_dir, f"subject{directory}", "normalized-signs")
+    extracted_features_dir = os.path.join(parent_dir, f"subject{directory}", "extracted-features")
+    os.makedirs(extracted_features_dir, exist_ok=True)
 
     # Pobierz wszystkie nazwy plików w katalogu
     all_filenames = []
     for f in os.listdir(subject_dir):
         if os.path.isfile(os.path.join(subject_dir, f)):
             all_filenames.append(f)
-    
-    # Losowo wybierz 10 plików
-    selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
-    # selected_filenames = ["normalized-sign_13.txt", "normalized-sign_14.txt", "normalized-sign_15.txt"]
+
+    # Sortowanie nazw plików według numerów w ich nazwach
+    sorted_filenames = sorted(all_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
+
+    # Losowo wybieramy 10 plików do policzenia profilu użytkownika
+    # selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
+    selected_filenames = ["normalized-sign_15.txt", "normalized-sign_3.txt", "normalized-sign_11.txt"]
     selected_filenames.sort(key=lambda x: int(re.search(r'\d+', x).group()))
 
-    average_speed_list = []
+    '''
+    Tu definiujemy główne listy dla naszych danych cech.
+    Każda z list zawiera podlisty danej cechy dla każdego podziału czasowego t.
+    Struktura: [Podpis1:[cecha1_t1, cecha1_t2, cecha1_t3, ...], Podpis2:[cecha1_t1, cecha1_t2, cecha1_t3, ...], ...]
+    '''
+    average_speed_list_for_selected_signs = []
 
-    for filename in selected_filenames:
+    for filename in sorted_filenames:
         xy_list = []
         times_list = []
 
         file_path = os.path.join(subject_dir, filename)
+
         with open(file_path, "r") as file:
             for line in file:
                 line = line.strip()
@@ -97,20 +118,49 @@ def process_directory(directory):
         # Podział punktów i czasów
         sublists = split_points_and_times(xy_list, times_list)
 
-        part_average_speed_list = []
+        '''
+        Tu definiujemy listy dla naszych cech.
+        Każda z list zawiera metryczki wyliczone na bazie punktów z danego przedziału t.
+        struktura: [cecha1_t1, cecha1_t2, cecha1_t3, ...]
+        '''
+        average_speed_list_for_sign = []
 
         for i, (points, times) in enumerate(sublists):
             average_speed_val = average_speed(points, times)
+            average_speed_list_for_sign.append(average_speed_val)
             # print(f"Sublist {i} for {filename}:")
             # print(f"Average speed: {average_speed_val}")
             # print(f"Points: {points}")
             # print(f"Times: {times}")
-            part_average_speed_list.append(average_speed_val)
 
-        average_speed_list.append(part_average_speed_list)
-    
-    # Transpose the list of average speeds to get lists of speeds for each time point
-    transposed_average_speed_list = list(map(list, zip(*average_speed_list)))
+        # Zapisz cechy do pliku
+        '''
+        Struktura pliku z przykładem V (szybkości średniej):
+        T/C (Czas na cechy)
+            C1 C2 C3 C4 ... CN
+        T1 V1 
+        T2 V2
+        T3 V3
+        .  .
+        .  .
+        .  .
+        TN
+
+        Tu dopisujemy cechy do plików.
+        '''
+        file_number = re.search(r'\d+', filename).group()
+        extracted_features_filename = os.path.join(extracted_features_dir, f"extracted-features-{file_number}.txt")
+        with open(extracted_features_filename, "w") as feature_file:
+            for i in range(len(average_speed_list_for_sign)):
+                feature_file.write(f"{average_speed_list_for_sign[i]}\n") # Tu dopisujemy cechy
+
+        if filename in selected_filenames:
+            average_speed_list_for_selected_signs.append(average_speed_list_for_sign)
+
+    #ranspose the list of average speeds to get lists of speeds for each time point
+    transposed_average_speed_list = list(map(list, zip(*average_speed_list_for_selected_signs)))
+    # for i in transposed_average_speed_list:
+    #     print(i)
 
     # Prepare the data to be saved
     profile_data = []
@@ -119,30 +169,13 @@ def process_directory(directory):
         std_speed = np.std(speeds)
         profile_data.append(f"t_{i}: Mean speed: {mean_speed}, Standard deviation: {std_speed}")
 
-    # Create the profiles directory if it doesn't exist
+    # Save the data to a file within the profiles directory
     profiles_dir = os.path.join(parent_dir, "profiles")
     os.makedirs(profiles_dir, exist_ok=True)
-
-    # Save the data to a file within the profiles directory
     profile_filename = os.path.join(profiles_dir, f"profile-{directory}.txt")
     with open(profile_filename, "w") as profile_file:
         for line in profile_data:
             profile_file.write(line + "\n")
-
-    # Sortowanie nazw plików według numerów w ich nazwach
-    sorted_filenames = sorted(selected_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
-    
-    # Sortowanie listy średnich prędkości zgodnie z posortowanymi nazwami plików
-    sorted_average_speed_list = [x for _, x in sorted(zip(selected_filenames, average_speed_list), key=lambda pair: int(re.search(r'\d+', pair[0]).group()))]
-
-    # Tworzenie DataFrame z wynikami
-    result_df = pd.DataFrame(sorted_average_speed_list).transpose()
-    result_df.columns = ["sign_{}".format(int(re.search(r'\d+', name).group())) for name in sorted_filenames]
-    result_df.index = ["t_{}".format(i) for i in range(len(result_df))]
-    
-    # Wypisywanie wyników z dokładnością do 20 miejsc po przecinku
-    pd.set_option('display.float_format', lambda x: f'{x:.20f}')
-    print(result_df)
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
