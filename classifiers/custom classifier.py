@@ -1,4 +1,3 @@
-import re
 import os
 import numpy as np
 
@@ -16,31 +15,32 @@ def is_signature_genuine(profile_data, signature_data):
                 matches.append(1)
             else:
                 matches.append(0)
-        if np.mean(matches) >= 0.7:
+        if np.mean(matches) >= 0.60:
             genuine_features_count += 1
     return genuine_features_count >= 7
 
 def process_directory(directory):
     # Etap 1: wczytywanie danych profilu
-    profile_filename = os.path.join(parent_dir, "profiles", f"profile-{directory}.txt")
-    with open(profile_filename, "r") as profile_file:
-        profile_data = []
-        for line in profile_file:
-            profile_data.append([float(x) for x in line.strip().split(", ")])
+    for profile_num in range(1, 57):
+        profile_filename = os.path.join(parent_dir, "profiles", f"profile-{profile_num}.txt")
+        with open(profile_filename, "r") as profile_file:
+            profile_data = []
+            for line in profile_file:
+                profile_data.append([float(x) for x in line.strip().split(", ")])
 
-    print(profile_data)
-
-    extracted_features_dir = os.path.join(parent_dir, f"subject{directory}", "extracted-features")
-    for filename in os.listdir(extracted_features_dir):
-        file_path = os.path.join(extracted_features_dir, filename)
-        with open(file_path, "r") as feature_file:
-            signature_data = []
-            for line in feature_file:
-                signature_data.append([float(x) for x in line.strip().split(", ")])
-        if is_signature_genuine(profile_data, signature_data):
-            print(f"{filename}: Genuine signature")
-        else:
-            print(f"{filename}: Forged signature")
+        # Etap 2: wczytywanie danych podpisów
+        extracted_features_dir = os.path.join(parent_dir, f"subject{directory}", "extracted-features")
+        for filename in os.listdir(extracted_features_dir):
+            file_path = os.path.join(extracted_features_dir, filename)
+            with open(file_path, "r") as feature_file:
+                signature_data = []
+                for line in feature_file:
+                    signature_data.append([float(x) for x in line.strip().split(", ")])
+            if is_signature_genuine(profile_data, signature_data):
+                print(f"{filename}: Genuine signature with profile {profile_num}")
+            else:
+                pass
+                #print(f"{filename}: Forged signature with profile {profile_num}")
 
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
