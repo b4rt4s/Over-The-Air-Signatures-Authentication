@@ -42,6 +42,35 @@ def process_directory(directory):
             normalized_xy_list = xy_list
             normalized_times_list = times_list
 
+        # if xy_list and xy_list[0] != "BREAK":
+        #     # Obliczanie średniej wartości Y
+        #     sum_y = 0
+        #     count = 0
+        #     for point in xy_list:
+        #         if point != "BREAK":
+        #             _, y = point
+        #             sum_y += y
+        #             count += 1
+        #     if count > 0:
+        #         y_offset = sum_y / count
+        #     else:
+        #         y_offset = 0
+
+        #     t_offset = times_list[0]
+        #     normalized_xy_list = []
+        #     normalized_times_list = []
+        #     for point, time in zip(xy_list, times_list):
+        #         if point == "BREAK":
+        #             normalized_xy_list.append("BREAK")
+        #             normalized_times_list.append("BREAK")
+        #         else:
+        #             x, y = point
+        #             normalized_xy_list.append((x, y - y_offset))  # Odejmujemy średnią Y od każdego punktu
+        #             normalized_times_list.append(time - t_offset)  # Normalizacja czasów jak wcześniej
+        # else:
+        #     normalized_xy_list = xy_list
+        #     normalized_times_list = times_list
+
         # Wyodrębnienie nazwy pliku z obiektu pliku i zamiana 'interpolated-sign' na 'normalized-sign'
         file_number = os.path.splitext(filename)[0].replace('interpolated-sign', 'normalized-sign')
         output_filename = os.path.join(parent_dir, f"subject{directory}", "normalized-signs", f"{file_number}.txt")
