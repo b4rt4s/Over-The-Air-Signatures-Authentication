@@ -312,7 +312,7 @@ def angle_between_start_end(points):
 #         count += 1
 #     return total_sin_alpha / count if count > 0 else 0
 
-def split_points_and_times(xy_list, times_list, num_parts=100): # Manipulacja liczbą podziałów na czasy w danym podpisie
+def split_points_and_times(xy_list, times_list, num_parts=20): # Manipulacja liczbą podziałów na czasy w danym podpisie
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
 
@@ -370,10 +370,10 @@ def process_directory(directory):
     total_path_length_list_for_selected_signs = []
     average_acceleration_list_for_selected_signs = []
     fragment_slope_list_for_selected_signs = []
-    #skewness_x_list_for_selected_signs = []
-    #skewness_y_list_for_selected_signs = []
     displacement_x_list_for_selected_signs = []
     displacement_y_list_for_selected_signs = []
+    total_signing_time_list_for_selected_signs = []
+    angle_between_start_end_list_for_selected_signs = []
 
     for filename in sorted_filenames:
         xy_list = []
@@ -414,10 +414,10 @@ def process_directory(directory):
         total_path_length_list_for_sign = []
         average_acceleration_list_for_sign = []
         fragment_slope_list_for_sign = []
-        #skewness_x_list_for_sign = []
-        #skewness_y_list_for_sign = []
         displacement_x_list_for_sign = []
         displacement_y_list_for_sign = []
+        total_signing_time_list_for_sign = []
+        angle_between_start_end_list_for_sign = []
 
         for i, (points, times) in enumerate(sublists):
             average_speed_val = average_speed(points, times)
@@ -437,18 +437,18 @@ def process_directory(directory):
 
             fragment_slope_val = fragment_slope(points)
             fragment_slope_list_for_sign.append(fragment_slope_val)
-            
-            #skewness_x_val = skewness_x(points)
-            #skewness_x_list_for_sign.append(skewness_x_val)
-
-            #skewness_y_val = skewness_y(points)
-            #skewness_y_list_for_sign.append(skewness_y_val)
 
             displacement_x_val = displacement_x(points)
             displacement_x_list_for_sign.append(displacement_x_val)
 
             displacement_y_val = displacement_y(points)
             displacement_y_list_for_sign.append(displacement_y_val)
+
+            total_signing_time_val = total_signing_time(times)
+            total_signing_time_list_for_sign.append(total_signing_time_val)
+
+            angle_between_start_end_val = angle_between_start_end(points)
+            angle_between_start_end_list_for_sign.append(angle_between_start_end_val)
 
             # print(f"Sublist {i} for {filename}:")
             # print(f"Average speed: {average_speed_val}")
@@ -474,7 +474,7 @@ def process_directory(directory):
         extracted_features_filename = os.path.join(extracted_features_dir, f"extracted-features-{file_number}.txt")
         with open(extracted_features_filename, "w") as feature_file:
             for i in range(len(average_speed_list_for_sign)):
-                feature_file.write(f"{average_speed_list_for_sign[i]}, {average_positive_speed_x_list_for_sign[i]}, {average_positive_speed_y_list_for_sign[i]}, {total_path_length_list_for_sign[i]}, {average_acceleration_list_for_sign[i]}, {fragment_slope_list_for_sign[i]}, {displacement_x_list_for_sign[i]}, {displacement_y_list_for_sign[i]}\n") # Tu dopisujemy cechy
+                feature_file.write(f"{average_speed_list_for_sign[i]}, {average_positive_speed_x_list_for_sign[i]}, {average_positive_speed_y_list_for_sign[i]}, {total_path_length_list_for_sign[i]}, {average_acceleration_list_for_sign[i]}, {fragment_slope_list_for_sign[i]}, {displacement_x_list_for_sign[i]}, {displacement_y_list_for_sign[i]}, {total_signing_time_list_for_sign[i]}, {angle_between_start_end_list_for_sign[i]}\n") # Tu dopisujemy cechy
 
         if filename in selected_filenames:
             average_speed_list_for_selected_signs.append(average_speed_list_for_sign)
@@ -483,10 +483,10 @@ def process_directory(directory):
             total_path_length_list_for_selected_signs.append(total_path_length_list_for_sign)
             average_acceleration_list_for_selected_signs.append(average_acceleration_list_for_sign)
             fragment_slope_list_for_selected_signs.append(fragment_slope_list_for_sign)
-            # skewness_x_list_for_selected_signs.append(skewness_x_list_for_sign)
-            # sewness_y_list_for_selected_signs.append(skewness_y_list_for_sign)
             displacement_x_list_for_selected_signs.append(displacement_x_list_for_sign)
             displacement_y_list_for_selected_signs.append(displacement_y_list_for_sign)
+            total_signing_time_list_for_selected_signs.append(total_signing_time_list_for_sign)
+            angle_between_start_end_list_for_selected_signs.append(angle_between_start_end_list_for_sign)
 
     # Transpose the list of average speeds and total path lengths to get lists for each time point
     transposed_average_speed_list = list(map(list, zip(*average_speed_list_for_selected_signs)))
@@ -495,10 +495,10 @@ def process_directory(directory):
     transposed_total_path_length_list = list(map(list, zip(*total_path_length_list_for_selected_signs)))
     transposed_average_acceleration_list = list(map(list, zip(*average_acceleration_list_for_selected_signs)))
     transposed_fragment_slope_list = list(map(list, zip(*fragment_slope_list_for_selected_signs)))
-    #transposed_skewness_x_list = list(map(list, zip(*skewness_x_list_for_selected_signs)))
-    #transposed_skewness_y_list = list(map(list, zip(*skewness_y_list_for_selected_signs)))
     transposed_displacement_x_list = list(map(list, zip(*displacement_x_list_for_selected_signs)))
     transposed_displacement_y_list = list(map(list, zip(*displacement_y_list_for_selected_signs)))
+    transposed_total_signing_time = list(map(list, zip(*total_signing_time_list_for_selected_signs)))
+    transposed_angle_between_start_end = list(map(list, zip(*angle_between_start_end_list_for_selected_signs)))
 
     # for i in transposed_average_speed_list:
     #    print(i)
@@ -512,10 +512,10 @@ def process_directory(directory):
     t100: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
     '''
     profile_data = []
-    for i, (speeds, pos_speeds_x, pos_speeds_y, lengths, accelerations, slopes, displacements_x, displacements_y) in enumerate(zip(
+    for i, (speeds, pos_speeds_x, pos_speeds_y, lengths, accelerations, slopes, displacements_x, displacements_y, signing_times, angles) in enumerate(zip(
             transposed_average_speed_list, transposed_average_positive_speed_x_list, transposed_average_positive_speed_y_list, 
             transposed_total_path_length_list, transposed_average_acceleration_list, transposed_fragment_slope_list,
-            transposed_displacement_x_list, transposed_displacement_y_list)):
+            transposed_displacement_x_list, transposed_displacement_y_list, transposed_total_signing_time, transposed_angle_between_start_end)):
         mean_speed = np.mean(speeds)
         std_speed = np.std(speeds)
         mean_pos_speed_x = np.mean(pos_speeds_x)
@@ -528,18 +528,19 @@ def process_directory(directory):
         std_acceleration = np.std(accelerations)
         mean_slope = np.mean(slopes)
         std_slope = np.std(slopes)
-        #mean_skew_x = np.mean(skews_x)
-        #std_skew_x = np.std(skews_x)
-        #mean_skew_y = np.mean(skews_y)
-        #std_skew_y = np.std(skews_y)
         mean_displacement_x = np.mean(displacements_x)
         std_displacement_x = np.std(displacements_x)
         mean_displacement_y = np.mean(displacements_y)
         std_displacement_y = np.std(displacements_y)
+        mean_signing_time = np.mean(signing_times)
+        std_signing_time = np.std(signing_times)
+        mean_angle = np.mean(angles)
+        std_angle = np.std(angles)
         
         profile_data.append(f"{mean_speed}, {std_speed}, {mean_pos_speed_x}, {std_pos_speed_x}, {mean_pos_speed_y}, {std_pos_speed_y}, "
                             f"{mean_length}, {std_length}, {mean_acceleration}, {std_acceleration}, {mean_slope}, {std_slope}, "
-                            f"{mean_displacement_x}, {std_displacement_x}, {mean_displacement_y}, {std_displacement_y}")
+                            f"{mean_displacement_x}, {std_displacement_x}, {mean_displacement_y}, {std_displacement_y}, "
+                            f"{mean_signing_time}, {std_signing_time}, {mean_angle}, {std_angle}")
 
     # Save the data to a file within the profiles directory
     profiles_dir = os.path.join(parent_dir, "profiles")
