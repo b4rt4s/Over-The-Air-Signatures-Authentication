@@ -4,6 +4,7 @@ import re
 def process_directory(directory):
     directory_path = os.path.join(parent_dir, f"subject{directory}")
 
+    # Stwórz podkatalogi "signature-pngs", "original-signs" i "fixed-signs"
     # Create subdirectories "signature-pngs", "original-signs", and "fixed-signs"
     signature_pngs_dir = os.path.join(directory_path, "signature-pngs")
     original_signs_dir = os.path.join(directory_path, "original-signs")
@@ -13,6 +14,7 @@ def process_directory(directory):
     os.makedirs(original_signs_dir, exist_ok=True)
     os.makedirs(fixed_signs_dir, exist_ok=True)
 
+    # Przenieś pliki PNG do "signature-pngs" i przetwórz pliki tekstowe
     # Move PNG files to "signature-pngs" and process text files
     for filename in os.listdir(directory_path):
         file_path = os.path.join(directory_path, filename)
@@ -45,9 +47,11 @@ def process_text_file(filename, original_signs_dir, fixed_signs_dir):
                 xy_list.append((-1, -1))
                 times_list.append((-1, -1, -1))
 
+    # Przenieś oryginalny plik do "original-signs"
     # Move the original file to "original-signs"
     os.rename(filename, os.path.join(original_signs_dir, os.path.basename(filename)))
 
+    # Zapisz przetworzone dane do nowego pliku w "fixed-signs"
     # Write the processed data to a new file in "fixed-signs"
     fixed_filename = os.path.join(fixed_signs_dir, os.path.basename(filename))
     with open(fixed_filename, "w") as file:

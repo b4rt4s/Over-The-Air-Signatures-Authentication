@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 # Collect data and labels
@@ -56,12 +56,12 @@ y_test = np.array(test_labels)
 assert len(X_train) == len(y_train), "Inconsistent number of samples in training data and labels"
 assert len(X_test) == len(y_test), "Inconsistent number of samples in test data and labels"
 
-# Train KNN classifier
-knn = KNeighborsClassifier(n_neighbors=1)
-knn.fit(X_train, y_train)
+# Train Decision Tree classifier
+tree = DecisionTreeClassifier()
+tree.fit(X_train, y_train)
 
 # Predict on test data
-y_pred = knn.predict(X_test)
+y_pred = tree.predict(X_test)
 
 # Evaluate accuracy
 accuracy = accuracy_score(y_test, y_pred)

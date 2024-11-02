@@ -15,9 +15,9 @@ def is_signature_genuine(profile_data, signature_data):
                 matches.append(1)
             else:
                 matches.append(0)
-        if np.mean(matches) >= 0.60:
+        if np.mean(matches) >= 0.60: # od 0.01 do 0.99 
             genuine_features_count += 1
-    return genuine_features_count >= 7
+    return genuine_features_count >= 7 # od 1 do 9 i mamy 1000 ustawien, dla tego wyliczyc far i frr
 
 def process_directory(directory):
     # Etap 1: wczytywanie danych profilu

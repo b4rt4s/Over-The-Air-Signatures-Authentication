@@ -4,30 +4,39 @@ import numpy as np
 import random
 from scipy.stats import skew
 
-# Średnia szybkość
+'''
+Implementacja cechy 1: średnia szybkość
+Implemenation of feature 1: average speed
+'''
 def average_speed(points, times): 
     total_distance = 0
+
     for i in range(1, len(points)):
         x1, y1 = points[i-1]
         x2, y2 = points[i]
         
         # Obliczanie dystansu między punktami
+        # Compute the distance between the points
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         total_distance += distance
     
     # Obliczanie całkowitego czasu
+    # Compute the total time
     total_time = (times[-1] - times[0]) / 1000000
     
-    # Unikamy dzielenia przez zero
     if total_time == 0:
         return 0
     
     # Obliczanie średniej szybkości w jednostkach na sekundę
+    # Compute the average speed in units per second
     average_speed = total_distance / total_time
     
     return average_speed
 
-# Średnia dodatnia szybkość w osi X
+'''
+Implementacja cechy 2: średnia dodatnia szybkość w osi X
+Implemenation of feature 2: average positive speed in X axis
+'''
 def average_positive_speed_x(points, times):
     total_distance_x = 0
     positive_time = 0
@@ -35,7 +44,10 @@ def average_positive_speed_x(points, times):
     for i in range(1, len(points)):
         x1 = points[i - 1][0]
         x2 = points[i][0]
-        if x2 > x1:  # Sprawdzamy tylko ruch w prawo (dodatni)
+        
+        # Sprawdzenie tylko ruchu w prawią stronę (dodatniego)
+        # Check only movement in the right direction (positive)
+        if x2 > x1:
             distance_x = x2 - x1
             delta_t = (times[i] - times[i - 1]) / 1000000
             if delta_t > 0:
@@ -44,7 +56,10 @@ def average_positive_speed_x(points, times):
 
     return total_distance_x / positive_time if positive_time > 0 else 0
 
-# Średnia dodatnia szybkość w osi Y
+'''
+Implementacja cechy 3: średnia dodatnia szybkość w osi Y
+Implemenation of feature 3: average positive speed in Y axis
+'''
 def average_positive_speed_y(points, times):
     total_distance_y = 0
     positive_time = 0
@@ -52,7 +67,10 @@ def average_positive_speed_y(points, times):
     for i in range(1, len(points)):
         y1 = points[i - 1][1]
         y2 = points[i][1]
-        if y2 > y1:  # Sprawdzamy tylko ruch w górę (dodatni)
+
+        # Sprawdzenie tylko ruchu w górę (dodatniego)
+        # Check only movement upwards (positive)
+        if y2 > y1:
             distance_y = y2 - y1
             delta_t = (times[i] - times[i - 1]) / 1000000
             if delta_t > 0:
@@ -61,20 +79,28 @@ def average_positive_speed_y(points, times):
 
     return total_distance_y / positive_time if positive_time > 0 else 0
 
-# Całkowita długość ścieżki (dystans)
+'''
+Implementacja cechy 4: całkowita długość ścieżki (łączny dystans między punktami)
+Implemenation of feature 4: total path length (total distance between points)
+'''
 def total_path_length(points):
     total_distance = 0
+
     for i in range(1, len(points)):
         x1, y1 = points[i-1]
         x2, y2 = points[i]
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         total_distance += distance
+        
     return total_distance
 
-# Średnie przyspieszenie
+# Implementacja cechy 5: średnie przyspieszenie
+# Implemenation of feature 5: average acceleration
 def average_acceleration(points, times):
+    # Zapewnienie warunku minimum 3 punktów do obliczenia średniego przyspieszenia
+    # Ensure a minimum of 3 points to calculate the average acceleration
     if len(points) < 3 or len(times) < 3:
-        return 0  # Potrzebujemy przynajmniej trzy punkty do obliczenia przyspieszenia
+        return 0
     
     velocities = []
     velocities_times = []
@@ -159,159 +185,6 @@ def angle_between_start_end(points):
     angle = np.arctan2(y_end - y_start, x_end - x_start)
     return angle
 
-# # Skośność współrzędnych X
-# def skewness_x(points):
-#     x_coords = [x for x, y in points]
-#     return skew(x_coords) if len(x_coords) > 2 else 0
-
-# # Skośność współrzędnych Y
-# def skewness_y(points):
-#     y_coords = [y for x, y in points]
-#     return skew(y_coords) if len(y_coords) > 2 else 0
-
-# # Przemieszczenie
-# def fragment_displacement(points):
-#     if len(points) < 2:
-#         return 0
-#     x_start, y_start = points[0]
-#     x_end, y_end = points[-1]
-#     displacement = np.hypot(x_end - x_start, y_end - y_start)
-#     return displacement
-
-# def max_min_coordinates(points):
-#     x_coords = [x for x, y in points]
-#     y_coords = [y for x, y in points]
-#     max_x, min_x = max(x_coords), min(x_coords)
-#     max_y, min_y = max(y_coords), min(y_coords)
-#     return max_x, min_x, max_y, min_y
-
-# def average_speed_x(points, times):
-#     total_distance_x = 0
-#     for i in range(1, len(points)):
-#         x1 = points[i - 1][0]
-#         x2 = points[i][0]
-#         distance_x = abs(x2 - x1)
-#         total_distance_x += distance_x
-    
-#     total_time = (times[-1] - times[0]) / 1000000  # Konwersja mikrosekund na sekundy
-#     if total_time == 0:
-#         return 0
-    
-#     average_speed_x = total_distance_x / total_time
-#     return average_speed_x
-
-# def average_speed_y(points, times):
-#     total_distance_y = 0
-#     for i in range(1, len(points)):
-#         y1 = points[i - 1][1]
-#         y2 = points[i][1]
-#         distance_y = abs(y2 - y1)
-#         total_distance_y += distance_y
-    
-#     total_time = (times[-1] - times[0]) / 1000000  # Konwersja mikrosekund na sekundy
-#     if total_time == 0:
-#         return 0
-    
-#     average_speed_y = total_distance_y / total_time
-#     return average_speed_y
-
-# def average_distance_from_origin(points):
-#     if not points:
-#         return 0
-#     total_distance = 0
-#     for x, y in points:
-#         distance = np.hypot(x, y)
-#         total_distance += distance
-#     return total_distance / len(points)
-
-# def path_efficiency(points):
-#     if len(points) < 2:
-#         return 1
-#     start = points[0]
-#     end = points[-1]
-#     direct_distance = np.sqrt((end[0] - start[0])**2 + (end[1] - start[1])**2)
-#     total_path = total_path_length(points)
-#     return direct_distance / total_path if total_path != 0 else 0
-
-# def maximum_curvature(points):
-#     max_curvature = 0
-#     for i in range(1, len(points) - 1):
-#         x0, y0 = points[i - 1]
-#         x1, y1 = points[i]
-#         x2, y2 = points[i + 1]
-#         v0 = np.array([x1 - x0, y1 - y0])
-#         v1 = np.array([x2 - x1, y2 - y1])
-#         norm_v0 = np.linalg.norm(v0)
-#         norm_v1 = np.linalg.norm(v1)
-#         if norm_v0 == 0 or norm_v1 == 0:
-#             continue
-#         cos_theta = np.dot(v0, v1) / (norm_v0 * norm_v1)
-#         cos_theta = np.clip(cos_theta, -1, 1)
-#         angle = np.arccos(cos_theta)
-#         if angle > max_curvature:
-#             max_curvature = angle
-#     return max_curvature
-
-# def average_velocity_x(points, times):
-#     total_velocity_x = 0
-#     count = 0
-#     for i in range(1, len(points)):
-#         x1 = points[i - 1][0]
-#         x2 = points[i][0]
-#         t1 = times[i - 1] / 1000000
-#         t2 = times[i] / 1000000
-#         delta_t = t2 - t1
-#         if delta_t == 0:
-#             continue
-#         velocity_x = (x2 - x1) / delta_t
-#         total_velocity_x += velocity_x
-#         count += 1
-#     return total_velocity_x / count if count > 0 else 0
-
-# def average_velocity_y(points, times):
-#     total_velocity_y = 0
-#     count = 0
-#     for i in range(1, len(points)):
-#         y1 = points[i - 1][1]
-#         y2 = points[i][1]
-#         t1 = times[i - 1] / 1000000  # Konwersja mikrosekund na sekundy
-#         t2 = times[i] / 1000000
-#         delta_t = t2 - t1
-#         if delta_t == 0:
-#             continue
-#         velocity_y = (y2 - y1) / delta_t
-#         total_velocity_y += velocity_y
-#         count += 1
-#     return total_velocity_y / count if count > 0 else 0
-
-# def average_cos_alpha(points):
-#     total_cos_alpha = 0
-#     count = 0
-#     for i in range(1, len(points)):
-#         dx = points[i][0] - points[i - 1][0]
-#         dy = points[i][1] - points[i - 1][1]
-#         distance = np.hypot(dx, dy)
-#         if distance == 0:
-#             continue
-#         cos_alpha = dx / distance
-#         total_cos_alpha += cos_alpha
-#         count += 1
-#     return total_cos_alpha / count if count > 0 else 0
-
-# def average_sin_alpha(points):
-#     total_sin_alpha = 0
-#     count = 0
-#     for i in range(1, len(points)):
-#         dx = points[i][0] - points[i - 1][0]
-#         dy = points[i][1] - points[i - 1][1]
-#         distance = np.hypot(dx, dy) # Obliczanie odległości euklidesowej między punktami
-#         if distance == 0:
-#             continue
-#         sin_alpha = dy / distance
-#         total_sin_alpha += sin_alpha
-#         count += 1
-#     return total_sin_alpha / count if count > 0 else 0
-
 def split_points_and_times(xy_list, times_list, num_parts=20): # Manipulacja liczbą podziałów na czasy w danym podpisie
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
@@ -322,6 +195,7 @@ def split_points_and_times(xy_list, times_list, num_parts=20): # Manipulacja lic
     remainder = N % num_parts # fragmentów do rozdsysponowania np. 5
     
     start = 0
+    
     for i in range(num_parts):
         # Calculate the end index for the current sublist
         end = start + base_size
