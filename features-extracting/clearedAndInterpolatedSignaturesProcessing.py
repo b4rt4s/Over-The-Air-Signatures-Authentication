@@ -122,9 +122,9 @@ def remove_close_points(points, times, min_distance=5):
     Manimalna odległość między punktami jest określona przez min_distance.
     W tym przypadku, min_distance = 5.
 
-    # Function that removes points that are too close to each other.
-    # The minimum distance between points is determined by min_distance.
-    # In this case, min_distance = 5.
+    Function that removes points that are too close to each other.
+    The minimum distance between points is determined by min_distance.
+    In this case, min_distance = 5.
     '''
     
     cleaned_points = []
@@ -157,9 +157,9 @@ def interpolate_points(points, times, min_distance=10, max_distance=100):
     Punkty są interpolowane, jeżeli dystans między istniejącymi punktami jest większy niż min_distance i mniejszy niż max_distance.
     W tym przypadku, min_distance = 10 i max_distance = 100.
 
-    # Function that interpolates missing points.
-    # Points are interpolated if the distance between existing points is greater than min_distance and less than max_distance.
-    # In this case, min_distance = 10 and max_distance = 100.
+    Function that interpolates missing points.
+    Points are interpolated if the distance between existing points is greater than min_distance and less than max_distance.
+    In this case, min_distance = 10 and max_distance = 100.
     '''
     interpolated_points = []
     interpolated_times = []

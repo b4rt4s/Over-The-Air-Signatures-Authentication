@@ -94,66 +94,103 @@ def total_path_length(points):
         
     return total_distance
 
-# Implementacja cechy 5: średnie przyspieszenie
-# Implemenation of feature 5: average acceleration
+'''
+Implementacja cechy 5: średnie przyspieszenie
+Implemenation of feature 5: average acceleration
+'''
 def average_acceleration(points, times):
-    # Zapewnienie warunku minimum 3 punktów do obliczenia średniego przyspieszenia
-    # Ensure a minimum of 3 points to calculate the average acceleration
+    # Zapewnienie warunku minimum 3 punktów do obliczenia szybkości między nimi
+    # Ensure a minimum of 3 points to calculate the speed between them
     if len(points) < 3 or len(times) < 3:
         return 0
     
-    velocities = []
-    velocities_times = []
     # Obliczanie prędkości między kolejnymi punktami
+    # Compute the speed between consecutive points
+    speeds = []
+    speeds_times = []
+
     for i in range(1, len(points)):
         x1, y1 = points[i - 1]
         x2, y2 = points[i]
-        t1 = times[i - 1] / 1000000  # Konwersja na sekundy
+
+        t1 = times[i - 1] / 1000000
         t2 = times[i] / 1000000
         delta_t = t2 - t1
+
         if delta_t == 0:
-            continue  # Unikamy dzielenia przez zero
+            continue
         
         distance = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        velocity = distance / delta_t
-        velocities.append(velocity)
-        velocities_times.append((t1 + t2) / 2)  # Czas środkowy dla prędkości
+        speed = distance / delta_t
+        speeds.append(speed)
+
+        # Obliczanie środkowego czasu dla prędkości
+        # Compute the middle time for the speed
+        speeds_times.append((t1 + t2) / 2)
     
-    if len(velocities) < 2:
-        return 0  # Nie można obliczyć przyspieszenia z mniej niż dwóch prędkości
+    # Zapewnienie warunku minimum 2 punktów do obliczenia przyspieszenia między nimi
+    # Ensure a minimum of 2 points to calculate the acceleration between them
+    if len(speeds) < 2:
+        return 0
     
+    # Obliczanie przyspieszenia między kolejnymi punktami
+    # Compute the acceleration between consecutive points
     total_acceleration = 0
     count = 0
-    # Obliczanie przyspieszenia między kolejnymi prędkościami
-    for i in range(1, len(velocities)):
-        v1 = velocities[i - 1]
-        v2 = velocities[i]
-        t1 = velocities_times[i - 1]
-        t2 = velocities_times[i]
+   
+    for i in range(1, len(speeds)):
+        v1 = speeds[i - 1]
+        v2 = speeds[i]
+
+        t1 = speeds_times[i - 1]
+        t2 = speeds_times[i]
         delta_t = t2 - t1
+
         if delta_t == 0:
-            continue  # Unikamy dzielenia przez zero
+            continue
+
         acceleration = (v2 - v1) / delta_t
         total_acceleration += abs(acceleration)
         count += 1
     
     if count == 0:
-        return 0  # Unikamy dzielenia przez zero
+        return 0
     
+    # Obliczenie średniego przyspieszenia
+    # Compute the average acceleration
     average_acceleration = total_acceleration / count
+
     return average_acceleration
 
-# Nachylenie linii prostej
+'''
+Implementacja cechy 6: nachylenie linii prostej
+Implemenation of feature 6: fragment slope
+'''
 def fragment_slope(points): 
     if len(points) < 2:
         return 0
+    
+    # Oddzielenie współrzędnych X i Y
+    # Separate the X and Y coordinates
     x_coords = [x for x, y in points]
     y_coords = [y for x, y in points]
+    
+    # Utworzenie transponowanej macierzy A składającej się z współrzędnych X i jedynek
+    # Przykład dla 3 punktów: A = [[x1, 1], [x2, 1], [x3, 1]]
+    # Create the transposed matrix A consisting of X coordinates and ones
+    # Example for 3 points: A = [[x1, 1], [x2, 1], [x3, 1]]
     A = np.vstack([x_coords, np.ones(len(x_coords))]).T
-    m, c = np.linalg.lstsq(A, y_coords, rcond=None)[0]
-    return m  # Nachylenie linii prostej
 
-# Przesunięcie w osi X
+    # Dopasowanie linii prostej do punktów metodą najmniejszych kwadratów, aby uzyskać nachylenie (m) i wyraz wolny (c)
+    # Fit a line to the points using the least squares method to get the slope (m) and intercept (c)
+    m, c = np.linalg.lstsq(A, y_coords, rcond=None)[0]
+    
+    return m
+
+'''
+Implementacja cechy 7: przesunięcie w osi X
+Implemenation of feature 7: displacement in X axis
+'''
 def displacement_x(points):
     if len(points) < 2:
         return 0
@@ -161,7 +198,10 @@ def displacement_x(points):
     x_end = points[-1][0]
     return x_end - x_start
 
-# Przesunięcie w osi Y
+'''
+Implementacja cechy 8: przesunięcie w osi Y
+Implemenation of feature 8: displacement in Y axis
+'''
 def displacement_y(points):
     if len(points) < 2:
         return 0
@@ -169,48 +209,79 @@ def displacement_y(points):
     y_end = points[-1][1]
     return y_end - y_start
 
-# Całkowity czas podpisu w danym fragmencie
+'''
+Implementacja cechy 9: czas podpisu
+Implemenation of feature 9: signing time
+'''
 def total_signing_time(times):
     if not times:
         return 0
     total_time = (times[-1] - times[0]) / 1000000
     return total_time
 
-# Kąt między startowym a końcowym punktem
+'''
+Implementacja cechy 10: kąt między startowym a końcowym punktem
+Implemenation of feature 10: angle between start and end point
+'''
 def angle_between_start_end(points):
     if len(points) < 2:
         return 0
+    
     x_start, y_start = points[0]
     x_end, y_end = points[-1]
+
     angle = np.arctan2(y_end - y_start, x_end - x_start)
+
     return angle
 
-def split_points_and_times(xy_list, times_list, num_parts=20): # Manipulacja liczbą podziałów na czasy w danym podpisie
+'''
+Funkcja dzieląca podpis na równe fragmenty czasowe.
+Liczba fragmentów jest określana przez num_parts.
+W tym przypadku, num_parts = 20.
+
+Function splitting the signature into equal time parts.
+The number of parts is determined by num_parts.
+In this case, num_parts = 20.
+'''
+def split_points_and_times(xy_list, times_list, num_parts=20):
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
 
-    N = len(xy_list) # np. 505
-    sublists = []
-    base_size = N // num_parts # np. 10
-    remainder = N % num_parts # fragmentów do rozdsysponowania np. 5
+    # Obliczanie liczby punktów w podpisie np. 505
+    # Calculate the number of points in the signature f.ex. 505
+    N = len(xy_list)
+
+    # Liczba punktów w każdym fragmencie np. 10
+    # Number of points in each part f.ex. 10
+    base_size = N // num_parts
+
+    # Reszta z dzielenia na fragmenty np. 5, które będą dodane do pierwszych fragmentów czasowych
+    # Excess of division into parts f.ex. 5 which will be added to the first time parts
+    remainder = N % num_parts
     
+    sublists = []
     start = 0
     
     for i in range(num_parts):
-        # Calculate the end index for the current sublist
+        # Obliczanie końca fragmentu czasowego
+        # Calculate the end of the time part
         end = start + base_size
+
+        # Dodanie jednego elementu do pierwszych fragmentów czasowych
         if i < remainder:
-            end += 1  # Add one more element to the first 'remainder' sublists
+            end += 1
         
-        # Append the current sublist of points and times
+        # Dodanie punktów i czasów do podlisty
+        # Add points and times to the sublist
         sublists.append((xy_list[start:end], times_list[start:end]))
         
-        # Update the start index for the next sublist
+        # Przesunięcie początku na koniec
+        # Move the start to the end
         start = end
     
     return sublists
 
-def process_directory(directory):
+def process_directory(directory, selected_numbers):
     parent_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "signatures-database",
@@ -219,24 +290,31 @@ def process_directory(directory):
     extracted_features_dir = os.path.join(parent_dir, f"subject{directory}", "extracted-features")
     os.makedirs(extracted_features_dir, exist_ok=True)
 
-    # Pobierz wszystkie nazwy plików w katalogu
+    # Pobieranie wszystkich nazwy plików z katalogu normalized-signs
+    # Get all filenames from the normalized-signs directory
     all_filenames = []
     for f in os.listdir(subject_dir):
         if os.path.isfile(os.path.join(subject_dir, f)):
             all_filenames.append(f)
 
-    # Sortowanie nazw plików według numerów w ich nazwach
+    # Sortowanie rosnąco nazw plików według numerów w ich nazwach
+    # Sort the filenames in ascending order by the numbers in their names
     sorted_filenames = sorted(all_filenames, key=lambda x: int(re.search(r'\d+', x).group()))
 
-    # Losowo wybieramy 10 plików do policzenia profilu użytkownika
-    selected_filenames = random.sample(all_filenames, min(10, len(all_filenames)))
-    # selected_filenames = ["normalized-sign_15.txt", "normalized-sign_3.txt", "normalized-sign_11.txt"]
-    selected_filenames.sort(key=lambda x: int(re.search(r'\d+', x).group()))
+    # Wybranie 10 plików do policzenia profilu użytkownika zgodnie z wylosowanymi numerami podpisów od 1 do 15
+    # Select 10 files to calculate the user profile according to the randomly selected signature numbers from 1 to 15
+    selected_filenames = []
+    for f in sorted_filenames:
+        file_number = int(re.search(r'\d+', f).group())
+        if file_number in selected_numbers:
+            selected_filenames.append(f)
 
     '''
-    Tu definiujemy główne listy dla naszych danych cech.
-    Każda z list zawiera podlisty danej cechy dla każdego podziału czasowego t.
-    Struktura: [Podpis1:[cecha1_t1, cecha1_t2, cecha1_t3, ...], Podpis2:[cecha1_t1, cecha1_t2, cecha1_t3, ...], ...]
+    Definicja list głównych dla każdej z cech zawierających metryczki wyliczone na bazie punktów z danego przedziału t w każdym wylosowanym podpisie.
+    Struktura: [Podpis1: [cecha1_t1, cecha1_t2, cecha1_t3, ...], Podpis2: [cecha1_t1, cecha1_t2, cecha1_t3, ...], ...]
+
+    Definition of main lists for each feature containing metrics calculated based on points from a given time interval t in each randomly selected signature.
+    Structure: [Signature1: [feature1_t1, feature1_t2, feature1_t3, ...], Signature2: [feature1_t1, feature1_t2, feature1_t3, ...], ...]
     '''
     average_speed_list_for_selected_signs = []
     average_positive_speed_x_list_for_selected_signs = []
@@ -270,17 +348,21 @@ def process_directory(directory):
                     xy_list.append("BREAK")
                     times_list.append("BREAK")
 
-        # Usuń przerwy przed podziałem
+        # Usunięcie przerw przed podziałem
+        # Remove breaks before splitting
         xy_list = [point for point in xy_list if point != "BREAK"]
         times_list = [time for time in times_list if time != "BREAK"]
 
-        # Podział punktów i czasów
+        # Podział punktów i czasów na fragmenty czasowe
+        # Split points and times into time parts
         sublists = split_points_and_times(xy_list, times_list)
 
         '''
-        Tu definiujemy listy dla naszych cech.
-        Każda z list zawiera metryczki wyliczone na bazie punktów z danego przedziału t.
-        struktura: [cecha1_t1, cecha1_t2, cecha1_t3, ...]
+        Definicja podlist dla każdej z cech zawierających metryczki wyliczone na bazie punktów z danego przedziału t.
+        Struktura: [cecha1_t1, cecha1_t2, cecha1_t3, ...]
+
+        Definition of sublists for each feature containing metrics calculated based on points from a given time interval t.
+        Structure: [feature1_t1, feature1_t2, feature1_t3, ...]
         '''
         average_speed_list_for_sign = []
         average_positive_speed_x_list_for_sign = []
@@ -296,53 +378,51 @@ def process_directory(directory):
         for i, (points, times) in enumerate(sublists):
             average_speed_val = average_speed(points, times)
             average_speed_list_for_sign.append(average_speed_val)
-
             average_positive_speed_x_val = average_positive_speed_x(points, times)
             average_positive_speed_x_list_for_sign.append(average_positive_speed_x_val)
-
             average_positive_speed_y_val = average_positive_speed_y(points, times)
             average_positive_speed_y_list_for_sign.append(average_positive_speed_y_val)
-
             total_path_length_val = total_path_length(points)
             total_path_length_list_for_sign.append(total_path_length_val)
-
             average_acceleration_val = average_acceleration(points, times)
             average_acceleration_list_for_sign.append(average_acceleration_val)
-
             fragment_slope_val = fragment_slope(points)
             fragment_slope_list_for_sign.append(fragment_slope_val)
-
             displacement_x_val = displacement_x(points)
             displacement_x_list_for_sign.append(displacement_x_val)
-
             displacement_y_val = displacement_y(points)
             displacement_y_list_for_sign.append(displacement_y_val)
-
             total_signing_time_val = total_signing_time(times)
             total_signing_time_list_for_sign.append(total_signing_time_val)
-
             angle_between_start_end_val = angle_between_start_end(points)
             angle_between_start_end_list_for_sign.append(angle_between_start_end_val)
 
-            # print(f"Sublist {i} for {filename}:")
-            # print(f"Average speed: {average_speed_val}")
-            # print(f"Points: {points}")
-            # print(f"Times: {times}")
-
-        # Zapisz cechy do pliku
         '''
-        Struktura pliku z przykładem V (szybkości średniej):
+        Zapis cech do pliku z danymi wyliczonymi na podstawie punktów z danego przedziału t.
+        Struktura pliku na przykładzie cechy średniej szybkości V:
+
         T/C (Czas na cechy)
-            C1 C2 C3 C4 ... CN
+           C1 C2 C3 C4 ... CN
         T1 V1 
         T2 V2
         T3 V3
         .  .
         .  .
         .  .
-        TN
+        TN VN
 
-        Tu dopisujemy cechy do plików.
+        Save features to a file with data calculated based on points from a given time interval t.
+        File structure for the average speed V feature example:
+
+        T/C (Time for features)
+           C1 C2 C3 C4 ... CN
+        T1 V1 
+        T2 V2
+        T3 V3
+        .  .
+        .  .
+        .  .
+        TN VN       
         '''
         file_number = re.search(r'\d+', filename).group()
         extracted_features_filename = os.path.join(extracted_features_dir, f"extracted-features-{file_number}.txt")
@@ -361,8 +441,9 @@ def process_directory(directory):
             displacement_y_list_for_selected_signs.append(displacement_y_list_for_sign)
             total_signing_time_list_for_selected_signs.append(total_signing_time_list_for_sign)
             angle_between_start_end_list_for_selected_signs.append(angle_between_start_end_list_for_sign)
-
-    # Transpose the list of average speeds and total path lengths to get lists for each time point
+        
+    # Transpozycja list cech dla wylosowanych podpisów, aby wierszami były czasy, a kolumnami cechy
+    # Transposition of feature lists for randomly selected signatures so that the rows are times and the columns are features
     transposed_average_speed_list = list(map(list, zip(*average_speed_list_for_selected_signs)))
     transposed_average_positive_speed_x_list = list(map(list, zip(*average_positive_speed_x_list_for_selected_signs)))
     transposed_average_positive_speed_y_list = list(map(list, zip(*average_positive_speed_y_list_for_selected_signs)))
@@ -374,16 +455,32 @@ def process_directory(directory):
     transposed_total_signing_time = list(map(list, zip(*total_signing_time_list_for_selected_signs)))
     transposed_angle_between_start_end = list(map(list, zip(*angle_between_start_end_list_for_selected_signs)))
 
-    # for i in transposed_average_speed_list:
-    #    print(i)
-
-    # Prepare the data to be saved
     '''
-    Tabelka z danymi profilu użytkownika
-    t0: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
-    t1: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
-    ...
-    t100: cecha1(mean, std), cecha2(mean, std), cecha3(mean, std), ..., cecha10(mean, std)
+    Zapis średnich i odchyleń standardowych dla poszczególnych cech dla wylosowanych 10 podpisów do pliku według podziału na fragmenty czasowe
+    Struktura pliku:
+
+    T/C (Czas na cechy)
+        C1 C2 C3 C4 ... CN
+    T1 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    T2 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    T3 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    .  .
+    .  .
+    .  .
+    TN mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+
+    Save the means and standard deviations for each feature for the randomly selected 10 signatures to a file according to the division into time fragments.
+    File structure:
+
+    T/C (Time for features)
+        C1 C2 C3 C4 ... CN
+    T1 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    T2 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    T3 mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
+    .  .
+    .  .
+    .  .
+    TN mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
     '''
     profile_data = []
     for i, (speeds, pos_speeds_x, pos_speeds_y, lengths, accelerations, slopes, displacements_x, displacements_y, signing_times, angles) in enumerate(zip(
@@ -416,7 +513,8 @@ def process_directory(directory):
                             f"{mean_displacement_x}, {std_displacement_x}, {mean_displacement_y}, {std_displacement_y}, "
                             f"{mean_signing_time}, {std_signing_time}, {mean_angle}, {std_angle}")
 
-    # Save the data to a file within the profiles directory
+    # Zapisanie danych o średnich i odchyleniach cech jako profilu danego użytkownika
+    # Save the data about the means and standard deviations of features as the profile of the given user
     profiles_dir = os.path.join(parent_dir, "profiles")
     os.makedirs(profiles_dir, exist_ok=True)
     profile_filename = os.path.join(profiles_dir, f"profile-{directory}.txt")
@@ -431,14 +529,21 @@ parent_dir = os.path.join(
 
 choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
 
+# Wylosowanie 10 numerów od 1 do 15
+# Draw 10 numbers from 1 to 15
+selected_numbers = sorted(random.sample(range(1, 16), 10))
+selected_numbers_file = os.path.join(parent_dir, "selected_numbers.txt")
+with open(selected_numbers_file, "w") as f:
+    f.write(", ".join(map(str, selected_numbers)) + "\n")
+
 if choice == 'range':
     start = int(input("Enter start subject number: "))
     end = int(input("Enter end subject number: "))
     for directory in range(start, end + 1):
-        process_directory(directory)
+        process_directory(directory, selected_numbers)
 elif choice == 'all':
     for directory in os.listdir(parent_dir):
         if directory.startswith("subject") and directory[7:].isdigit():
-            process_directory(int(directory[7:]))
+            process_directory(int(directory[7:]), selected_numbers)
 else:
     print("Invalid choice. Please enter 'range' or 'all'.")
