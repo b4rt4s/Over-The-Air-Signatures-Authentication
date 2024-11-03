@@ -3,7 +3,7 @@ import numpy as np
 
 # Funkcja sprawdzająca autentyczność podpisu według zdefiniowanych thresholdów
 # Function checking the authenticity of the signature according to the defined thresholds
-def is_signature_genuine(profile_data, signature_data):
+def is_signature_genuine(profile_data, signature_data, genuine_features_threshold):
     # Inicjacja progu minimalnego dla liczby zgodnych cech
     # Initialize the minimum threshold for the number of matching features
     genuine_features_count = 0
@@ -41,7 +41,7 @@ def is_signature_genuine(profile_data, signature_data):
 
     # Jeżeli liczba zgodnych cech wynosi co najmniej 7, to podpis jest uznawany za autentyczny
     # If the number of matching features is at least 7, the signature is considered genuine
-    return genuine_features_count >= 7
+    return genuine_features_count >= genuine_features_threshold
 
 # Funkcja wczytująca wszystkie profile z plików
 # Function loading all profiles from files
@@ -56,7 +56,7 @@ def load_all_profiles(parent_dir):
 
 # Funkcja zwracająca liczbę błędnie uznanych prób autentycznych i nieautentycznych podpisów
 # Function returning the number of incorrectly recognized genuine and impostor attempts
-def process_user(user_num, profiles, parent_dir):
+def process_user(user_num, profiles, parent_dir, genuine_features_threshold):
     # Etap 1: wczytywanie profilów 
     # Stage 1: loading profiles
     profile_data = profiles[user_num]
@@ -79,7 +79,7 @@ def process_user(user_num, profiles, parent_dir):
 
         N_genuine_attempts += 1
 
-        if not is_signature_genuine(profile_data, signature_data):
+        if not is_signature_genuine(profile_data, signature_data, genuine_features_threshold):
             FRR_count += 1
 
     # Porównanie podpisów użytkownika względem profili innych użytkowników - sprawdzenie błędu FAR
@@ -98,10 +98,10 @@ def process_user(user_num, profiles, parent_dir):
             # Skipping the comparison of user signatures to their own profile
             if other_profile_num == user_num:
                 continue
-
+            
             N_impostor_attempts += 1
 
-            if is_signature_genuine(other_profile_data, signature_data):
+            if is_signature_genuine(other_profile_data, signature_data, genuine_features_threshold):
                 FAR_count += 1
 
     return FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts
@@ -113,45 +113,82 @@ parent_dir = os.path.join(
 
 profiles = load_all_profiles(parent_dir)
 
-total_FRR_count = 0
-total_FAR_count = 0
-total_N_genuine_attempts = 0
-total_N_impostor_attempts = 0
+# Próg minimalnej liczby zgodnych cech
+genuine_features_thresholds = range(1, 11)
 
 choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
 
-if choice == 'range':
-    start = int(input("Enter start subject number: "))
-    end = int(input("Enter end subject number: "))
-    for user_num in range(start, end + 1):
-        FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(user_num, profiles, parent_dir)
-        total_FRR_count += FRR_count
-        total_FAR_count += FAR_count
-        total_N_genuine_attempts += N_genuine_attempts
-        total_N_impostor_attempts += N_impostor_attempts
-elif choice == 'all':
-    for directory in os.listdir(parent_dir):
-        if directory.startswith("subject") and directory[7:].isdigit():
-            user_num = int(directory[7:])
-            FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(user_num, profiles, parent_dir)
-            total_FRR_count += FRR_count
-            total_FAR_count += FAR_count
-            total_N_genuine_attempts += N_genuine_attempts
-            total_N_impostor_attempts += N_impostor_attempts
-else:
-    print("Invalid choice. Please enter 'range' or 'all'.")
+# Zapis wyników FAR i FRR do pliku w celu późniejszego wykorzystania tych wartości do stworzenia wykresów
+# Save FAR and FRR results to a file for later use of these values to create charts
+with open('far_frr_results.txt', 'w') as result_file:
+    result_file.write('far,frr,threshold\n')
 
-# Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
-# Calculating the average FRR and FAR error values for the entire system
-if total_N_genuine_attempts > 0:
-    FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
-else:
-    FRR_rate = 0.0
+    if choice == 'range':
+        start = int(input("Enter start subject number: "))
+        end = int(input("Enter end subject number: "))
 
-if total_N_impostor_attempts > 0:
-    FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
-else:
-    FAR_rate = 0.0
+        for genuine_features_threshold in genuine_features_thresholds:
+            total_FRR_count = 0
+            total_FAR_count = 0
+            total_N_genuine_attempts = 0
+            total_N_impostor_attempts = 0
 
-print(f"Total FRR: {FRR_rate:.2f}%")
-print(f"Total FAR: {FAR_rate:.2f}%")
+            for user_num in range(start, end + 1):
+                FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
+                    user_num, profiles, parent_dir, genuine_features_threshold)
+                total_FRR_count += FRR_count
+                total_FAR_count += FAR_count
+                total_N_genuine_attempts += N_genuine_attempts
+                total_N_impostor_attempts += N_impostor_attempts
+
+            # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
+            if total_N_genuine_attempts > 0:
+                FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
+            else:
+                FRR_rate = 0.0
+
+            if total_N_impostor_attempts > 0:
+                FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
+            else:
+                FAR_rate = 0.0
+
+            print(f"Threshold: {genuine_features_threshold}")
+            print(f"Total FRR: {FRR_rate:.2f}%")
+            print(f"Total FAR: {FAR_rate:.2f}%")
+
+            result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
+
+    elif choice == 'all':
+        for genuine_features_threshold in genuine_features_thresholds:
+            total_FRR_count = 0
+            total_FAR_count = 0
+            total_N_genuine_attempts = 0
+            total_N_impostor_attempts = 0
+
+            for directory in os.listdir(parent_dir):
+                if directory.startswith("subject") and directory[7:].isdigit():
+                    user_num = int(directory[7:])
+                    FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
+                        user_num, profiles, parent_dir, genuine_features_threshold)
+                    total_FRR_count += FRR_count
+                    total_FAR_count += FAR_count
+                    total_N_genuine_attempts += N_genuine_attempts
+                    total_N_impostor_attempts += N_impostor_attempts
+
+            # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
+            if total_N_genuine_attempts > 0:
+                FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
+            else:
+                FRR_rate = 0.0
+
+            if total_N_impostor_attempts > 0:
+                FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
+            else:
+                FAR_rate = 0.0
+
+            print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%, Threshold: {genuine_features_threshold}")
+
+            result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
+
+    else:
+        print("Invalid choice. Please enter 'range' or 'all'.")
