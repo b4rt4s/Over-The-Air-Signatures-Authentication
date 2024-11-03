@@ -1,8 +1,37 @@
 import os
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import confusion_matrix
 
+# Funkcje do obliczania FAR i FRR
+def calculate_FRR_and_FAR(conf_matrix):
+    total_false_rejections = 0
+    total_false_acceptances = 0
+    total_genuine_attempts = 0
+    total_impostor_attempts = 0
+    num_classes = len(conf_matrix)
+    total_samples = np.sum(conf_matrix)
+    
+    for i in range(num_classes):
+        # Genuine attempts for class i
+        genuine_attempts_i = np.sum(conf_matrix[i, :])
+        total_genuine_attempts += genuine_attempts_i
+        # False rejections for class i (off-diagonal in row i)
+        false_rejections_i = genuine_attempts_i - conf_matrix[i, i]
+        total_false_rejections += false_rejections_i
+        
+        # Impostor attempts for class i (samples not belonging to class i)
+        impostor_attempts_i = total_samples - genuine_attempts_i
+        total_impostor_attempts += impostor_attempts_i
+        # False acceptances for class i (off-diagonal in column i)
+        false_acceptances_i = np.sum(conf_matrix[:, i]) - conf_matrix[i, i]
+        total_false_acceptances += false_acceptances_i
+        
+    FRR = total_false_rejections / total_genuine_attempts if total_genuine_attempts > 0 else 0.0
+    FAR = total_false_acceptances / total_impostor_attempts if total_impostor_attempts > 0 else 0.0
+    return FRR, FAR
+
+# Przygotowanie danych
 data = []
 labels = []
 test_data = []
@@ -32,13 +61,14 @@ for subject_num in subjects:
             for line in feature_file:
                 signature_data.extend([float(x) for x in line.strip().split(", ")])
             subject_data.append(signature_data)
-
+    
+    # Losowe przemieszanie danych i podział na treningowe i testowe
     np.random.shuffle(subject_data)
-    training_data = subject_data[:10]
-    testing_data = subject_data[10:]
+    training_data = subject_data[:10]  # Pierwsze 10 do treningu
+    testing_data = subject_data[10:]   # Reszta do testu
 
     data.extend(training_data)
-    labels.extend([subject_num] * 10)
+    labels.extend([subject_num] * len(training_data))
     test_data.extend(testing_data)
     test_labels.extend([subject_num] * len(testing_data))
 
@@ -51,47 +81,18 @@ y_test = np.array(test_labels)
 assert len(X_train) == len(y_train), "Inconsistent number of samples in training data and labels"
 assert len(X_test) == len(y_test), "Inconsistent number of samples in test data and labels"
 
-knn = KNeighborsClassifier(n_neighbors=1)
+# Trening klasyfikatora KNN
+knn = KNeighborsClassifier(n_neighbors=3)
 knn.fit(X_train, y_train)
 
+# Predykcja na zbiorze testowym
 y_pred = knn.predict(X_test)
 
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.2f}")
+# Obliczanie macierzy konfuzji
+conf_matrix = confusion_matrix(y_test, y_pred, labels=subjects)
 
-print(classification_report(y_test, y_pred))
+# Obliczanie FAR i FRR
+FRR, FAR = calculate_FRR_and_FAR(conf_matrix)
 
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-print(conf_matrix)
-
-# Funkcje do obliczania FAR i FRR
-def calculate_FAR(conf_matrix):
-    total_false_accepts = 0
-    total_impostor_attempts = 0
-    num_classes = len(conf_matrix)
-    for i in range(num_classes):
-        false_accepts_for_i = sum(conf_matrix[j][i] for j in range(num_classes) if j != i)
-        total_false_accepts += false_accepts_for_i
-        total_impostor_attempts_for_i = sum(sum(conf_matrix[j]) for j in range(num_classes) if j != i)
-        total_impostor_attempts += total_impostor_attempts_for_i
-    return total_false_accepts / total_impostor_attempts
-
-def calculate_FRR(conf_matrix):
-    total_false_rejects = 0
-    total_genuine_attempts = 0
-    num_classes = len(conf_matrix)
-    for i in range(num_classes):
-        false_rejects_for_i = sum(conf_matrix[i][j] for j in range(num_classes) if j != i)
-        total_false_rejects += false_rejects_for_i
-        total_genuine_attempts_for_i = sum(conf_matrix[i])
-        total_genuine_attempts += total_genuine_attempts_for_i
-    return total_false_rejects / total_genuine_attempts
-
-
-# Oblicz FAR i FRR
-far = calculate_FAR(conf_matrix)
-frr = calculate_FRR(conf_matrix)
-
-print(f"FAR: {far:.2f}")
-print(f"FRR: {frr:.2f}")
+print(f"Total FRR: {FRR * 100:.2f}%")
+print(f"Total FAR: {FAR * 100:.2f}%")
