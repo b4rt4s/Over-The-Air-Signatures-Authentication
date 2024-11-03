@@ -57,15 +57,26 @@ def load_all_profiles(parent_dir):
 
 # Funkcja zwracająca liczbę błędnie uznanych prób autentycznych i nieautentycznych podpisów
 # Function returning the number of incorrectly recognized genuine and impostor attempts
-def process_user(user_num, profiles, parent_dir, genuine_features_threshold, sigma_num):
+def process_user(user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num):
     # Etap 1: wczytywanie profilów 
     # Stage 1: loading profiles
     profile_data = profiles[user_num]
 
-    # Etap 2: wczytywanie podpisów
-    # Stage 2: loading signatures
+    # Etap 2: wczytywanie podpisów ze zbioru uczącego + testowego
+    # Stage 2: loading signatures from the training + test set
     extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
     signature_filenames = os.listdir(extracted_features_dir)
+
+    # Etap 2: wczytywanie podpisów tylko ze zbioru testowego
+    # Stage 2: loading signatures only from the test set
+    # extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
+    # all_filenames = os.listdir(extracted_features_dir)
+    # signature_filenames = []
+    # for filename in all_filenames:
+    #     number = int(filename.split('-')[-1].split('.')[0])
+    #     if number not in selected_numbers:
+    #         signature_filenames.append(filename)
+    # signature_filenames.sort(key=lambda x: int(x.split('-')[-1].split('.')[0]))
 
     # Porównanie podpisów użytkownika względem jego własnego profilu - sprawdzenie błędu FRR
     # Comparing user signatures to their own profile - checking the FRR error
@@ -129,6 +140,8 @@ selected_numbers = []
 with open(os.path.join(parent_dir, "results", "selected_numbers_file_and_features.txt"), 'r') as file:
     selected_numbers = [int(x) for x in file.readline().strip().split(", ")]
 
+print(selected_numbers)
+
 choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
 
 # Zapis wyników FAR i FRR do pliku w celu późniejszego wykorzystania tych wartości do stworzenia wykresów
@@ -146,7 +159,7 @@ with open(os.path.join(parent_dir, "results", "far_frr_thresholds-results.txt"),
 
             for user_num in range(start, end + 1):
                 FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
-                    user_num, profiles, parent_dir, genuine_features_threshold, sigma_num)
+                    user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num)
                 total_FRR_count += FRR_count
                 total_FAR_count += FAR_count
                 total_N_genuine_attempts += N_genuine_attempts
@@ -179,7 +192,7 @@ with open(os.path.join(parent_dir, "results", "far_frr_thresholds-results.txt"),
                 if directory.startswith("subject") and directory[7:].isdigit():
                     user_num = int(directory[7:])
                     FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
-                        user_num, profiles, parent_dir, genuine_features_threshold, sigma_num)
+                        user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num)
                     total_FRR_count += FRR_count
                     total_FAR_count += FAR_count
                     total_N_genuine_attempts += N_genuine_attempts
@@ -203,3 +216,4 @@ with open(os.path.join(parent_dir, "results", "far_frr_thresholds-results.txt"),
 
     else:
         print("Invalid choice. Please enter 'range' or 'all'.")
+        
