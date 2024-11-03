@@ -531,7 +531,8 @@ choice = input("Enter 'range' to specify a range of subjects or 'all' to process
 
 # Wylosowanie 10 numerów od 1 do 15
 # Draw 10 numbers from 1 to 15
-selected_numbers = sorted(random.sample(range(1, 16), 10))
+selected_numbers = [2, 3, 4, 5, 6, 7, 8, 11, 12, 15]
+#selected_numbers = sorted(random.sample(range(1, 16), 10))
 selected_numbers_file = os.path.join(parent_dir, "selected_numbers.txt")
 with open(selected_numbers_file, "w") as f:
     f.write(", ".join(map(str, selected_numbers)) + "\n")
