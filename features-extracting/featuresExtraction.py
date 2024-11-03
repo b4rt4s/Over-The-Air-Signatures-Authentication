@@ -2,7 +2,6 @@ import re
 import os
 import numpy as np
 import random
-from scipy.stats import skew
 
 '''
 Implementacja cechy 1: średnia szybkość
@@ -243,7 +242,7 @@ Function splitting the signature into equal time parts.
 The number of parts is determined by num_parts.
 In this case, num_parts = 20.
 '''
-def split_points_and_times(xy_list, times_list, num_parts=20):
+def split_points_and_times(xy_list, times_list, num_parts):
     if len(xy_list) != len(times_list):
         raise ValueError("xy_list and times_list must have the same length")
 
@@ -281,7 +280,7 @@ def split_points_and_times(xy_list, times_list, num_parts=20):
     
     return sublists
 
-def process_directory(directory, selected_numbers):
+def process_directory(directory, selected_numbers, selected_features, num_parts):
     parent_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "signatures-database",
@@ -309,6 +308,19 @@ def process_directory(directory, selected_numbers):
         if file_number in selected_numbers:
             selected_filenames.append(f)
 
+    feature_functions = {
+        1: ('average_speed', []),
+        2: ('average_positive_speed_x', []),
+        3: ('average_positive_speed_y', []),
+        4: ('total_path_length', []),
+        5: ('average_acceleration', []),
+        6: ('fragment_slope', []),
+        7: ('displacement_x', []),
+        8: ('displacement_y', []),
+        9: ('total_signing_time', []),
+        10: ('angle_between_start_end', [])
+    }
+
     '''
     Definicja list głównych dla każdej z cech zawierających metryczki wyliczone na bazie punktów z danego przedziału t w każdym wylosowanym podpisie.
     Struktura: [Podpis1: [cecha1_t1, cecha1_t2, cecha1_t3, ...], Podpis2: [cecha1_t1, cecha1_t2, cecha1_t3, ...], ...]
@@ -316,16 +328,9 @@ def process_directory(directory, selected_numbers):
     Definition of main lists for each feature containing metrics calculated based on points from a given time interval t in each randomly selected signature.
     Structure: [Signature1: [feature1_t1, feature1_t2, feature1_t3, ...], Signature2: [feature1_t1, feature1_t2, feature1_t3, ...], ...]
     '''
-    average_speed_list_for_selected_signs = []
-    average_positive_speed_x_list_for_selected_signs = []
-    average_positive_speed_y_list_for_selected_signs = []
-    total_path_length_list_for_selected_signs = []
-    average_acceleration_list_for_selected_signs = []
-    fragment_slope_list_for_selected_signs = []
-    displacement_x_list_for_selected_signs = []
-    displacement_y_list_for_selected_signs = []
-    total_signing_time_list_for_selected_signs = []
-    angle_between_start_end_list_for_selected_signs = []
+    selected_signs_features = {}
+    for feature_num in selected_features:
+        selected_signs_features[feature_num] = []
 
     for filename in sorted_filenames:
         xy_list = []
@@ -355,7 +360,7 @@ def process_directory(directory, selected_numbers):
 
         # Podział punktów i czasów na fragmenty czasowe
         # Split points and times into time parts
-        sublists = split_points_and_times(xy_list, times_list)
+        sublists = split_points_and_times(xy_list, times_list, num_parts)
 
         '''
         Definicja podlist dla każdej z cech zawierających metryczki wyliczone na bazie punktów z danego przedziału t.
@@ -364,38 +369,20 @@ def process_directory(directory, selected_numbers):
         Definition of sublists for each feature containing metrics calculated based on points from a given time interval t.
         Structure: [feature1_t1, feature1_t2, feature1_t3, ...]
         '''
-        average_speed_list_for_sign = []
-        average_positive_speed_x_list_for_sign = []
-        average_positive_speed_y_list_for_sign = []
-        total_path_length_list_for_sign = []
-        average_acceleration_list_for_sign = []
-        fragment_slope_list_for_sign = []
-        displacement_x_list_for_sign = []
-        displacement_y_list_for_sign = []
-        total_signing_time_list_for_sign = []
-        angle_between_start_end_list_for_sign = []
+        features_for_sign = {}
+        for feature_num in selected_features:
+            features_for_sign[feature_num] = []
 
         for i, (points, times) in enumerate(sublists):
-            average_speed_val = average_speed(points, times)
-            average_speed_list_for_sign.append(average_speed_val)
-            average_positive_speed_x_val = average_positive_speed_x(points, times)
-            average_positive_speed_x_list_for_sign.append(average_positive_speed_x_val)
-            average_positive_speed_y_val = average_positive_speed_y(points, times)
-            average_positive_speed_y_list_for_sign.append(average_positive_speed_y_val)
-            total_path_length_val = total_path_length(points)
-            total_path_length_list_for_sign.append(total_path_length_val)
-            average_acceleration_val = average_acceleration(points, times)
-            average_acceleration_list_for_sign.append(average_acceleration_val)
-            fragment_slope_val = fragment_slope(points)
-            fragment_slope_list_for_sign.append(fragment_slope_val)
-            displacement_x_val = displacement_x(points)
-            displacement_x_list_for_sign.append(displacement_x_val)
-            displacement_y_val = displacement_y(points)
-            displacement_y_list_for_sign.append(displacement_y_val)
-            total_signing_time_val = total_signing_time(times)
-            total_signing_time_list_for_sign.append(total_signing_time_val)
-            angle_between_start_end_val = angle_between_start_end(points)
-            angle_between_start_end_list_for_sign.append(angle_between_start_end_val)
+            for feature_num in selected_features:
+                function_name = feature_functions[feature_num][0]
+                if function_name in ['total_path_length', 'fragment_slope', 'displacement_x', 'displacement_y', 'angle_between_start_end']:
+                    feature_value = globals()[function_name](points)
+                elif function_name in ['total_signing_time']:
+                    feature_value = globals()[function_name](times)
+                else:
+                    feature_value = globals()[function_name](points, times)
+                features_for_sign[feature_num].append(feature_value)
 
         '''
         Zapis cech do pliku z danymi wyliczonymi na podstawie punktów z danego przedziału t.
@@ -427,33 +414,21 @@ def process_directory(directory, selected_numbers):
         file_number = re.search(r'\d+', filename).group()
         extracted_features_filename = os.path.join(extracted_features_dir, f"extracted-features-{file_number}.txt")
         with open(extracted_features_filename, "w") as feature_file:
-            for i in range(len(average_speed_list_for_sign)):
-                feature_file.write(f"{average_speed_list_for_sign[i]}, {average_positive_speed_x_list_for_sign[i]}, {average_positive_speed_y_list_for_sign[i]}, {total_path_length_list_for_sign[i]}, {average_acceleration_list_for_sign[i]}, {fragment_slope_list_for_sign[i]}, {displacement_x_list_for_sign[i]}, {displacement_y_list_for_sign[i]}, {total_signing_time_list_for_sign[i]}, {angle_between_start_end_list_for_sign[i]}\n") # Tu dopisujemy cechy
+            for i in range(len(sublists)):
+                feature_values = []
+                for feature_num in selected_features:
+                    feature_values.append(features_for_sign[feature_num][i])
+                feature_file.write(", ".join(map(str, feature_values)) + "\n")
 
         if filename in selected_filenames:
-            average_speed_list_for_selected_signs.append(average_speed_list_for_sign)
-            average_positive_speed_x_list_for_selected_signs.append(average_positive_speed_x_list_for_sign)
-            average_positive_speed_y_list_for_selected_signs.append(average_positive_speed_y_list_for_sign)
-            total_path_length_list_for_selected_signs.append(total_path_length_list_for_sign)
-            average_acceleration_list_for_selected_signs.append(average_acceleration_list_for_sign)
-            fragment_slope_list_for_selected_signs.append(fragment_slope_list_for_sign)
-            displacement_x_list_for_selected_signs.append(displacement_x_list_for_sign)
-            displacement_y_list_for_selected_signs.append(displacement_y_list_for_sign)
-            total_signing_time_list_for_selected_signs.append(total_signing_time_list_for_sign)
-            angle_between_start_end_list_for_selected_signs.append(angle_between_start_end_list_for_sign)
+            for feature_num in selected_features:
+                selected_signs_features[feature_num].append(features_for_sign[feature_num])
         
     # Transpozycja list cech dla wylosowanych podpisów, aby wierszami były czasy, a kolumnami cechy
     # Transposition of feature lists for randomly selected signatures so that the rows are times and the columns are features
-    transposed_average_speed_list = list(map(list, zip(*average_speed_list_for_selected_signs)))
-    transposed_average_positive_speed_x_list = list(map(list, zip(*average_positive_speed_x_list_for_selected_signs)))
-    transposed_average_positive_speed_y_list = list(map(list, zip(*average_positive_speed_y_list_for_selected_signs)))
-    transposed_total_path_length_list = list(map(list, zip(*total_path_length_list_for_selected_signs)))
-    transposed_average_acceleration_list = list(map(list, zip(*average_acceleration_list_for_selected_signs)))
-    transposed_fragment_slope_list = list(map(list, zip(*fragment_slope_list_for_selected_signs)))
-    transposed_displacement_x_list = list(map(list, zip(*displacement_x_list_for_selected_signs)))
-    transposed_displacement_y_list = list(map(list, zip(*displacement_y_list_for_selected_signs)))
-    transposed_total_signing_time = list(map(list, zip(*total_signing_time_list_for_selected_signs)))
-    transposed_angle_between_start_end = list(map(list, zip(*angle_between_start_end_list_for_selected_signs)))
+    transposed_features = {}
+    for feature_num in selected_features:
+        transposed_features[feature_num] = list(map(list, zip(*selected_signs_features[feature_num])))
 
     '''
     Zapis średnich i odchyleń standardowych dla poszczególnych cech dla wylosowanych 10 podpisów do pliku według podziału na fragmenty czasowe
@@ -483,35 +458,14 @@ def process_directory(directory, selected_numbers):
     TN mean1, std1, mean2, std2, mean3, std3, ..., mean10, std10
     '''
     profile_data = []
-    for i, (speeds, pos_speeds_x, pos_speeds_y, lengths, accelerations, slopes, displacements_x, displacements_y, signing_times, angles) in enumerate(zip(
-            transposed_average_speed_list, transposed_average_positive_speed_x_list, transposed_average_positive_speed_y_list, 
-            transposed_total_path_length_list, transposed_average_acceleration_list, transposed_fragment_slope_list,
-            transposed_displacement_x_list, transposed_displacement_y_list, transposed_total_signing_time, transposed_angle_between_start_end)):
-        mean_speed = np.mean(speeds)
-        std_speed = np.std(speeds)
-        mean_pos_speed_x = np.mean(pos_speeds_x)
-        std_pos_speed_x = np.std(pos_speeds_x)
-        mean_pos_speed_y = np.mean(pos_speeds_y)
-        std_pos_speed_y = np.std(pos_speeds_y)
-        mean_length = np.mean(lengths)
-        std_length = np.std(lengths)
-        mean_acceleration = np.mean(accelerations)
-        std_acceleration = np.std(accelerations)
-        mean_slope = np.mean(slopes)
-        std_slope = np.std(slopes)
-        mean_displacement_x = np.mean(displacements_x)
-        std_displacement_x = np.std(displacements_x)
-        mean_displacement_y = np.mean(displacements_y)
-        std_displacement_y = np.std(displacements_y)
-        mean_signing_time = np.mean(signing_times)
-        std_signing_time = np.std(signing_times)
-        mean_angle = np.mean(angles)
-        std_angle = np.std(angles)
-        
-        profile_data.append(f"{mean_speed}, {std_speed}, {mean_pos_speed_x}, {std_pos_speed_x}, {mean_pos_speed_y}, {std_pos_speed_y}, "
-                            f"{mean_length}, {std_length}, {mean_acceleration}, {std_acceleration}, {mean_slope}, {std_slope}, "
-                            f"{mean_displacement_x}, {std_displacement_x}, {mean_displacement_y}, {std_displacement_y}, "
-                            f"{mean_signing_time}, {std_signing_time}, {mean_angle}, {std_angle}")
+    for i in range(len(sublists)):
+        line_values = []
+        for feature_num in selected_features:
+            values = transposed_features[feature_num][i]
+            mean_value = np.mean(values)
+            std_value = np.std(values)
+            line_values.extend([mean_value, std_value])
+        profile_data.append(", ".join(map(str, line_values)))
 
     # Zapisanie danych o średnich i odchyleniach cech jako profilu danego użytkownika
     # Save the data about the means and standard deviations of features as the profile of the given user
@@ -527,24 +481,42 @@ parent_dir = os.path.join(
     "signatures-database",
 )
 
-choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
-
 # Wylosowanie 10 numerów od 1 do 15
 # Draw 10 numbers from 1 to 15
-selected_numbers = [2, 3, 4, 5, 6, 7, 8, 11, 12, 15]
 #selected_numbers = sorted(random.sample(range(1, 16), 10))
-selected_numbers_file = os.path.join(parent_dir, "selected_numbers.txt")
-with open(selected_numbers_file, "w") as f:
+
+# Ustawienie stałych numerów dla podpisów do zbioru uczącego
+# Set constant numbers for signatures to the training set
+selected_numbers = [2, 3, 4, 5, 6, 7, 8, 11, 12, 15]
+
+# Ustawienie stałych numerów dla cech wyliczanych na podpisach
+# Set constant numbers for features calculated on signatures
+#selected_features = [1, 2, 4, 5, 8, 9] 
+selected_features = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Ustawienie liczby podziałów czasowych na podpis
+# Set the number of time divisions for the signature
+num_parts = 20
+
+results_dir = os.path.join(parent_dir, "results")
+os.makedirs(results_dir, exist_ok=True)
+
+selected_numbers_file_and_features = os.path.join(results_dir, "selected_numbers_file_and_features.txt")
+with open(selected_numbers_file_and_features, "w") as f:
     f.write(", ".join(map(str, selected_numbers)) + "\n")
+    f.write(", ".join(map(str, selected_features)) + "\n")
+    f.write(f"{num_parts}" + "\n")
+
+choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
 
 if choice == 'range':
     start = int(input("Enter start subject number: "))
     end = int(input("Enter end subject number: "))
     for directory in range(start, end + 1):
-        process_directory(directory, selected_numbers)
+        process_directory(directory, selected_numbers, selected_features, num_parts)
 elif choice == 'all':
     for directory in os.listdir(parent_dir):
         if directory.startswith("subject") and directory[7:].isdigit():
-            process_directory(int(directory[7:]), selected_numbers)
+            process_directory(int(directory[7:]), selected_numbers, selected_features, num_parts)
 else:
     print("Invalid choice. Please enter 'range' or 'all'.")
