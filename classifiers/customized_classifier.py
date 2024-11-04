@@ -3,7 +3,7 @@ import numpy as np
 
 # Funkcja sprawdzająca autentyczność podpisu według zdefiniowanych thresholdów
 # Function checking the authenticity of the signature according to the defined thresholds
-def is_signature_genuine(profile_data, signature_data, genuine_features_threshold, sigma_num=1):
+def is_signature_genuine(profile_data, signature_data, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold):
     # Inicjacja progu minimalnego dla liczby zgodnych cech
     # Initialize the minimum threshold for the number of matching features
     genuine_features_count = 0
@@ -37,7 +37,7 @@ def is_signature_genuine(profile_data, signature_data, genuine_features_threshol
         
         # Jeżeli średnia zgodność metryk dla danej cechy zmierzona na poszczególnych odcinkach czasu wynosi co najmniej 60%, to cecha jest uznawana za zgodną
         # If the average metric compatibility for a given feature measured at individual time intervals is at least 60%, the feature is considered compatible
-        if len(matches) > 0 and np.mean(matches) >= 0.60:
+        if len(matches) > 0 and np.mean(matches) >= mean_t_of_feature_matches_threshold:
             genuine_features_count += 1
 
     # Jeżeli liczba zgodnych cech wynosi np. co najmniej 7, to podpis jest uznawany za autentyczny
@@ -57,7 +57,7 @@ def load_all_profiles(parent_dir):
 
 # Funkcja zwracająca liczbę błędnie uznanych prób autentycznych i nieautentycznych podpisów
 # Function returning the number of incorrectly recognized genuine and impostor attempts
-def process_user(user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num):
+def process_user(user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold, selected_numbers):
     # Etap 1: wczytywanie profilów 
     # Stage 1: loading profiles
     profile_data = profiles[user_num]
@@ -91,7 +91,7 @@ def process_user(user_num, profiles, parent_dir, genuine_features_threshold, sel
 
         N_genuine_attempts += 1
 
-        if not is_signature_genuine(profile_data, signature_data, genuine_features_threshold, sigma_num):
+        if not is_signature_genuine(profile_data, signature_data, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold):
             FRR_count += 1
 
     # Porównanie podpisów użytkownika względem profili innych użytkowników - sprawdzenie błędu FAR
@@ -113,7 +113,7 @@ def process_user(user_num, profiles, parent_dir, genuine_features_threshold, sel
             
             N_impostor_attempts += 1
 
-            if is_signature_genuine(other_profile_data, signature_data, genuine_features_threshold, sigma_num):
+            if is_signature_genuine(other_profile_data, signature_data, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold):
                 FAR_count += 1
 
     return FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts
@@ -125,23 +125,28 @@ parent_dir = os.path.join(
 
 profiles = load_all_profiles(parent_dir)
 
+# Wybór od 1 do 3 sigma
+# Choice from 1 to 3 sigma
+sigma_num = 1
+
+# Próg średniej zgodności metryk z przedziałów t dla danej cechy
+# Threshold of the average metric compatibility from the t intervals for a given feature
+mean_t_of_feature_matches_thresholds = np.arange(1, 11) / 10
+
 # Próg minimalnej liczby zgodnych cech
 # Minimum number of matching features threshold
 num_features = len(next(iter(profiles.values()))[0]) // 2
 genuine_features_thresholds = range(1, num_features + 1)
 
-# Wybór od 1 do 3 sigma
-# Choice from 1 to 3 sigma
-sigma_num = 1
-
 # Zapisanie thresholdów do pliku
 # Save thresholds to a file
 with open(os.path.join(parent_dir, "results", "selected_numbers_file_and_features.txt"), 'a') as file:
-    file.write(','.join(map(str, genuine_features_thresholds)) + f"\n")
     file.write(f"{sigma_num}\n")
+    file.write(','.join(map(str, mean_t_of_feature_matches_thresholds)) + "\n")
+    file.write(','.join(map(str, genuine_features_thresholds)) + "\n")
     
-# Wczytanie numerów podpisów użytych do stworzenia profili użytkowników
-# Loading the numbers of signatures used to create user profiles
+# Wczytanie numerów podpisów użytych do stworzenia profili użytkowników w celu ustalenia podpisów należących do zbioru testowego a nie uczącego
+# Loading the numbers of signatures used to create user profiles to determine which signatures belong to the test set and not the training set
 selected_numbers = []
 with open(os.path.join(parent_dir, "results", "selected_numbers_file_and_features.txt"), 'r') as file:
     selected_numbers = [int(x) for x in file.readline().strip().split(", ")]
@@ -150,74 +155,84 @@ choice = input("Enter 'range' to specify a range of subjects or 'all' to process
 
 # Zapis wyników FAR i FRR do pliku w celu późniejszego wykorzystania tych wartości do stworzenia wykresów
 # Save FAR and FRR results to a file for later use of these values to create charts
-with open(os.path.join(parent_dir, "results", "far_frr_thresholds-results.txt"), 'w') as result_file:
-    if choice == 'range':
-        start = int(input("Enter start subject number: "))
-        end = int(input("Enter end subject number: "))
+if choice == 'range':
+    start = int(input("Enter start subject number: "))
+    end = int(input("Enter end subject number: "))
 
-        for genuine_features_threshold in genuine_features_thresholds:
-            total_FRR_count = 0
-            total_FAR_count = 0
-            total_N_genuine_attempts = 0
-            total_N_impostor_attempts = 0
+    for mean_t_of_feature_matches_threshold in mean_t_of_feature_matches_thresholds:
+        result_filename = f"results_{mean_t_of_feature_matches_threshold}.txt"
+        result_filepath = os.path.join(parent_dir, "results", result_filename)
 
-            for user_num in range(start, end + 1):
-                FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
-                    user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num)
-                total_FRR_count += FRR_count
-                total_FAR_count += FAR_count
-                total_N_genuine_attempts += N_genuine_attempts
-                total_N_impostor_attempts += N_impostor_attempts
+        with open(result_filepath, 'w') as result_file:
+            for genuine_features_threshold in genuine_features_thresholds:
+                total_FRR_count = 0
+                total_FAR_count = 0
+                total_N_genuine_attempts = 0
+                total_N_impostor_attempts = 0
 
-            # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
-            # Calculate the average FRR and FAR error values for the entire system
-            if total_N_genuine_attempts > 0:
-                FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
-            else:
-                FRR_rate = 0.0
-
-            if total_N_impostor_attempts > 0:
-                FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
-            else:
-                FAR_rate = 0.0
-
-            print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%, Threshold: {genuine_features_threshold}")
-
-            result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
-
-    elif choice == 'all':
-        for genuine_features_threshold in genuine_features_thresholds:
-            total_FRR_count = 0
-            total_FAR_count = 0
-            total_N_genuine_attempts = 0
-            total_N_impostor_attempts = 0
-
-            for directory in os.listdir(parent_dir):
-                if directory.startswith("subject") and directory[7:].isdigit():
-                    user_num = int(directory[7:])
+                for user_num in range(start, end + 1):
                     FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
-                        user_num, profiles, parent_dir, genuine_features_threshold, selected_numbers, sigma_num)
+                        user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold, selected_numbers)
                     total_FRR_count += FRR_count
                     total_FAR_count += FAR_count
                     total_N_genuine_attempts += N_genuine_attempts
                     total_N_impostor_attempts += N_impostor_attempts
 
-            # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
-            # Calculate the average FRR and FAR error values for the entire system
-            if total_N_genuine_attempts > 0:
-                FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
-            else:
-                FRR_rate = 0.0
+                # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
+                # Calculate the average FRR and FAR error values for the entire system
+                if total_N_genuine_attempts > 0:
+                    FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
+                else:
+                    FRR_rate = 0.0
 
-            if total_N_impostor_attempts > 0:
-                FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
-            else:
-                FAR_rate = 0.0
+                if total_N_impostor_attempts > 0:
+                    FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
+                else:
+                    FAR_rate = 0.0
+                
+                print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}") 
+                print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
 
-            print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%, Threshold: {genuine_features_threshold}")
+                result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
 
-            result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
+elif choice == 'all':
+    for mean_t_of_feature_matches_threshold in mean_t_of_feature_matches_thresholds:
+        result_filename = f"results_{mean_t_of_feature_matches_threshold}.txt"
+        result_filepath = os.path.join(parent_dir, "results", result_filename)
 
-    else:
-        print("Invalid choice. Please enter 'range' or 'all'.")
+        with open(result_filepath, 'w') as result_file:
+            for genuine_features_threshold in genuine_features_thresholds:
+                total_FRR_count = 0
+                total_FAR_count = 0
+                total_N_genuine_attempts = 0
+                total_N_impostor_attempts = 0
+
+                for directory in os.listdir(parent_dir):
+                    if directory.startswith("subject") and directory[7:].isdigit():
+                        user_num = int(directory[7:])
+                        FRR_count, FAR_count, N_genuine_attempts, N_impostor_attempts = process_user(
+                            user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold, selected_numbers)
+                        total_FRR_count += FRR_count
+                        total_FAR_count += FAR_count
+                        total_N_genuine_attempts += N_genuine_attempts
+                        total_N_impostor_attempts += N_impostor_attempts
+
+                # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
+                # Calculate the average FRR and FAR error values for the entire system
+                if total_N_genuine_attempts > 0:
+                    FRR_rate = (total_FRR_count / total_N_genuine_attempts) * 100
+                else:
+                    FRR_rate = 0.0
+
+                if total_N_impostor_attempts > 0:
+                    FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
+                else:
+                    FAR_rate = 0.0
+
+                print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}") 
+                print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
+
+                result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
+else:
+    print("Invalid choice. Please enter 'range' or 'all'.")
         
