@@ -106,7 +106,7 @@ selected_numbers_file = os.path.join(data_dir, "selected_numbers_file_and_featur
 if os.path.exists(selected_numbers_file):
     with open(selected_numbers_file, 'r') as file:
         lines = file.readlines()
-        
+
         if len(lines) >= 6:
             training_signature_numbers = lines[0].strip()
             feature_numbers = lines[1].strip()
@@ -114,40 +114,32 @@ if os.path.exists(selected_numbers_file):
             sigma_multiplier = lines[3].strip()
             mean_t_of_feature_matches_thresholds = lines[4].strip()
             genuine_features_thresholds = lines[5].strip()
-        else:
-            print("Plik 'selected_numbers_file_and_features.txt' nie zawiera wystarczającej liczby linii.")
-else:
-    print("Brak pliku 'selected_numbers_file_and_features.txt' w katalogu 'results'.")
-    training_signature_numbers = ""
-    feature_numbers = ""
-    num_parts = ""
-    sigma_multiplier = ""
-    mean_t_of_feature_matches_thresholds = ""
-    genuine_features_thresholds = ""
 
 # Rysowanie wykresu FAR i FRR w zależności od progu z zaznaczeniem punktu EER
+# Drawing a graph of FAR and FRR depending on the threshold with the EER point marked
 plt.figure(figsize=(10, 5))
-plt.plot(data['threshold'], data['far'], label='FAR (%)', marker='o')
-plt.plot(data['threshold'], data['frr'], label='FRR (%)', marker='x')
-plt.xlabel('Genuine Features Threshold (k)')
+plt.plot(data['threshold'], data['far'], label='FAR in (%)', marker='o', color='orange')
+plt.plot(data['threshold'], data['frr'], label='FRR in (%)', marker='x', color='green')
+plt.xlabel('Number of genuine features (number of matches)')
 plt.ylabel('Error Rate (%)')
 
 # Dodanie dodatkowych informacji w tytule wykresu lub podtytule
-title = 'FAR i FRR w zależności od progu cech zgodnych (k) z zaznaczeniem EER'
-subtitle = (f"Użyte podpisy: {training_signature_numbers}\n"
-            f"Użyte cechy: {feature_numbers}\n"
-            f"Ilość podziałów czasowych: {num_parts}, "
-            f"Mnożnik sigma: {sigma_multiplier}, "
-            f"Mean t of feature matches threshold: {mean_t_of_feature_matches_threshold}")
+title = 'FAR and FRR depending on the genuine features threshold (number of matches)'
+subtitle = (f"Used signatures to create profile by their numbers: {training_signature_numbers}\n"
+            f"Threshold #1: Selected features by their numbers: {feature_numbers}\n"
+            f"Threshold #2: Division of signatures into time section:  {num_parts}\n"
+            f"Threshold #3: Standard deviations multiplied by: {sigma_multiplier}\n"
+            f"Threshold #4: Mean of matched features from time divisions per feature: {mean_t_of_feature_matches_threshold}\n"
+            f"Threshold #5: Number of genuine features: {genuine_features_thresholds}")
 
 plt.title(title)
 plt.suptitle(subtitle, fontsize=10)
-
 plt.legend()
 plt.grid(True)
 
-# Zaznaczenie punktu EER na wykresie
-plt.plot(EER_threshold, EER, 'ro')  # Rysowanie czerwonego punktu
+# Narysowanie punktu EER na wykresie
+# Drawing the EER point on the chart
+plt.plot(EER_threshold, EER, 'ro')
 plt.annotate(f'EER = {EER:.2f}%', (EER_threshold, EER), textcoords="offset points", xytext=(0,10), ha='center')
 
 plt.tight_layout()
