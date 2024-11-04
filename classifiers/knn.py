@@ -82,7 +82,7 @@ assert len(X_train) == len(y_train), "Inconsistent number of samples in training
 assert len(X_test) == len(y_test), "Inconsistent number of samples in test data and labels"
 
 # Trening klasyfikatora KNN
-knn = KNeighborsClassifier(n_neighbors=3)
+knn = KNeighborsClassifier(n_neighbors=1)
 knn.fit(X_train, y_train)
 
 # Predykcja na zbiorze testowym

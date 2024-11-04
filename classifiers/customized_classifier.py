@@ -134,13 +134,17 @@ genuine_features_thresholds = range(1, num_features + 1)
 # Choice from 1 to 3 sigma
 sigma_num = 1
 
+# Zapisanie thresholdów do pliku
+# Save thresholds to a file
+with open(os.path.join(parent_dir, "results", "selected_numbers_file_and_features.txt"), 'a') as file:
+    file.write(','.join(map(str, genuine_features_thresholds)) + f"\n")
+    file.write(f"{sigma_num}\n")
+    
 # Wczytanie numerów podpisów użytych do stworzenia profili użytkowników
 # Loading the numbers of signatures used to create user profiles
 selected_numbers = []
 with open(os.path.join(parent_dir, "results", "selected_numbers_file_and_features.txt"), 'r') as file:
     selected_numbers = [int(x) for x in file.readline().strip().split(", ")]
-
-print(selected_numbers)
 
 choice = input("Enter 'range' to specify a range of subjects or 'all' to process all subjects: ").strip().lower()
 

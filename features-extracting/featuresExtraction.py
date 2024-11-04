@@ -491,7 +491,7 @@ selected_numbers = [2, 3, 4, 5, 6, 7, 8, 11, 12, 15]
 
 # Ustawienie stałych numerów dla cech wyliczanych na podpisach
 # Set constant numbers for features calculated on signatures
-#selected_features = [1, 2, 4, 5, 8, 9] 
+# selected_features = [1, 2, 4, 5, 8, 9] 
 selected_features = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Ustawienie liczby podziałów czasowych na podpis
