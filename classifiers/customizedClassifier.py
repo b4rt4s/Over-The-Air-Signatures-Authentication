@@ -64,19 +64,19 @@ def process_user(user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_ma
 
     # Etap 2: wczytywanie podpisów ze zbioru uczącego + testowego
     # Stage 2: loading signatures from the training + test set
-    extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
-    signature_filenames = os.listdir(extracted_features_dir)
+    # extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
+    # signature_filenames = os.listdir(extracted_features_dir)
 
     # Etap 2: wczytywanie podpisów tylko ze zbioru testowego
     # Stage 2: loading signatures only from the test set
-    # extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
-    # all_filenames = os.listdir(extracted_features_dir)
-    # signature_filenames = []
-    # for filename in all_filenames:
-    #     number = int(filename.split('-')[-1].split('.')[0])
-    #     if number not in selected_numbers:
-    #         signature_filenames.append(filename)
-    # signature_filenames.sort(key=lambda x: int(x.split('-')[-1].split('.')[0]))
+    extracted_features_dir = os.path.join(parent_dir, f"subject{user_num}", "extracted-features")
+    all_filenames = os.listdir(extracted_features_dir)
+    signature_filenames = []
+    for filename in all_filenames:
+        number = int(filename.split('-')[-1].split('.')[0])
+        if number not in selected_numbers:
+            signature_filenames.append(filename)
+    signature_filenames.sort(key=lambda x: int(x.split('-')[-1].split('.')[0]))
 
     # Porównanie podpisów użytkownika względem jego własnego profilu - sprawdzenie błędu FRR
     # Comparing user signatures to their own profile - checking the FRR error
