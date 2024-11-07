@@ -1,11 +1,10 @@
 import os
 import numpy as np
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, Normalizer, QuantileTransformer, PowerTransformer
 from sklearn.model_selection import GridSearchCV
 
 # Przygotowanie danych
@@ -50,10 +49,6 @@ for subject_num in subjects:
             signature_data = []
             for line in feature_file:
                 signature_data.extend([float(x) for x in line.strip().split(", ")])
-            # signature_array = np.array(signature_data).reshape(-1, 10)
-            # mean_features = np.mean(signature_array, axis=0)
-            # std_features = np.std(signature_array, axis=0)
-            # final_features = np.concatenate((mean_features, std_features))
         
         if number in selected_numbers:
             subject_training_data.append(signature_data)
@@ -61,9 +56,9 @@ for subject_num in subjects:
             subject_testing_data.append(signature_data)
     
     data.extend(subject_training_data)
-    labels.extend([subject_num] * len(subject_training_data))
+    labels.extend([subject_num - 1] * len(subject_training_data))
     test_data.extend(subject_testing_data)
-    test_labels.extend([subject_num] * len(subject_testing_data))
+    test_labels.extend([subject_num - 1] * len(subject_testing_data))
 
 X_train = np.array(data)
 y_train = np.array(labels)
@@ -75,25 +70,29 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-for depth in range(1, 50):
-    clf = DecisionTreeClassifier(max_depth=depth)
-    clf.fit(X_train, y_train)
+# Parametry do Grid Search
+parameters = {'kernel':('linear', 'rbf', 'sigmoid', 'poly'), 'C':[0.1, 0.2, 0.3, 1, 5, 10], 'gamma':[0.001, 0.01, 0.1, 1]}
+svc = SVC()
+clf = GridSearchCV(svc, parameters, cv=5)
+clf.fit(X_train_scaled, y_train)
 
-    # Predykcja na zbiorze testowym z najlepszym modelem
-    y_pred = clf.predict(X_test)
+# Predykcja na zbiorze testowym z najlepszym modelem
+y_pred = clf.predict(X_test_scaled)
 
-    # Obliczanie macierzy konfuzji
-    conf_matrix = confusion_matrix(y_test, y_pred, labels=subjects)
+# Obliczanie macierzy konfuzji
+conf_matrix = confusion_matrix(y_test, y_pred, labels=subjects)
 
-    # Obliczanie FAR i FRR
-    TP = np.diag(conf_matrix)
-    FN = np.sum(conf_matrix, axis=1) - TP
-    FP = np.sum(conf_matrix, axis=0) - TP
-    TN = np.sum(conf_matrix) - (TP + FP + FN)
-    FAR = sum(FP) / (sum(FP) + sum(TN))
-    FRR = sum(FN) / (sum(TP) + sum(FN))
+# Obliczanie FAR i FRR
+TP = np.diag(conf_matrix)
+FN = np.sum(conf_matrix, axis=1) - TP
+print(FN)
+FP = np.sum(conf_matrix, axis=0) - TP
+TN = np.sum(conf_matrix) - (TP + FP + FN)
 
-    print(f"FAR = {round(FAR, 3)*100}%", f"FRR = {round(FRR, 3)*100}%")
+FAR = sum(FP) / (sum(FP) + sum(TN))
+FRR = sum(FN) / (sum(TP) + sum(FN))
+
+print(f"FAR = {round(FAR, 3)*100}%", f"FRR = {round(FRR, 3)*100}%")
 
 # Wyświetlanie macierzy konfuzji
 disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=subjects)
