@@ -91,17 +91,18 @@ grid_search = GridSearchCV(
 grid_search.fit(X_train_scaled, y_train)
 
 # Najlepsza wartość K
+best_k = 11 
 best_k = grid_search.best_params_['n_neighbors']
 
 # Trenowanie KNN z najlepszym K
-knn_best = KNeighborsClassifier(n_neighbors=5, weights='distance')
+knn_best = KNeighborsClassifier(n_neighbors=best_k, weights='distance')
 knn_best.fit(X_train_scaled, y_train)
 
 # Uzyskanie prawdopodobieństw przynależności do każdej z klas
 y_proba = knn_best.predict_proba(X_test_scaled)
 
 # Lista progów od 0.01 do 1.00
-thresholds = np.arange(0.01, 1.00, 0.01)
+thresholds = np.arange(0.01, 0.2, 0.01)
 far_list = []
 frr_list = []
 

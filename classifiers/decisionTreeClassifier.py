@@ -1,12 +1,11 @@
 import os
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix, accuracy_score
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import PowerTransformer
+import pandas as pd
 
 # Przygotowanie danych
 data = []
@@ -50,16 +49,13 @@ for subject_num in subjects:
             signature_data = []
             for line in feature_file:
                 signature_data.extend([float(x) for x in line.strip().split(", ")])
-            # signature_array = np.array(signature_data).reshape(-1, 10)
-            # mean_features = np.mean(signature_array, axis=0)
-            # std_features = np.std(signature_array, axis=0)
-            # final_features = np.concatenate((mean_features, std_features))
         
         if number in selected_numbers:
             subject_training_data.append(signature_data)
         else:
             subject_testing_data.append(signature_data)
     
+    # Dodajemy dane treningowe i testowe do ogólnych list
     data.extend(subject_training_data)
     labels.extend([subject_num] * len(subject_training_data))
     test_data.extend(subject_testing_data)
@@ -67,37 +63,142 @@ for subject_num in subjects:
 
 X_train = np.array(data)
 y_train = np.array(labels)
+
 X_test = np.array(test_data)
 y_test = np.array(test_labels)
 
 # Normalizacja danych
-scaler = StandardScaler()
+scaler = PowerTransformer()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-for depth in range(1, 50):
-    clf = DecisionTreeClassifier(max_depth=depth)
-    clf.fit(X_train, y_train)
+# Definiowanie zakresu max_depth
+param_grid = {'max_depth': list(range(1, 21))}
 
-    # Predykcja na zbiorze testowym z najlepszym modelem
-    y_pred = clf.predict(X_test)
+# Inicjalizacja klasyfikatora drzewa decyzyjnego
+tree = DecisionTreeClassifier(random_state=42)
 
-    # Obliczanie macierzy konfuzji
-    conf_matrix = confusion_matrix(y_test, y_pred, labels=subjects)
+# Inicjalizacja GridSearchCV
+grid_search = GridSearchCV(
+    estimator=tree,
+    param_grid=param_grid,
+    cv=5,  # liczba podziałów w cross-validation
+    scoring='accuracy',  # można dostosować metrykę
+    n_jobs=-1  # użycie wszystkich dostępnych rdzeni procesora
+)
 
-    # Obliczanie FAR i FRR
-    TP = np.diag(conf_matrix)
-    FN = np.sum(conf_matrix, axis=1) - TP
-    FP = np.sum(conf_matrix, axis=0) - TP
-    TN = np.sum(conf_matrix) - (TP + FP + FN)
-    FAR = sum(FP) / (sum(FP) + sum(TN))
-    FRR = sum(FN) / (sum(TP) + sum(FN))
+# Przeprowadzenie Grid Search
+grid_search.fit(X_train_scaled, y_train)
 
-    print(f"FAR = {round(FAR, 3)*100}%", f"FRR = {round(FRR, 3)*100}%")
+# Najlepsza wartość max_depth
+best_depth = grid_search.best_params_['max_depth']
+best_depth = 3
 
-# Wyświetlanie macierzy konfuzji
-disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=subjects)
-fig, ax = plt.subplots(figsize=(12, 10))
-disp.plot(cmap=plt.cm.Blues, xticks_rotation=45, ax=ax)
-plt.title('Confusion Matrix')
+# Trenowanie drzewa decyzyjnego z najlepszym max_depth
+tree_best = DecisionTreeClassifier(max_depth=best_depth, random_state=42)
+tree_best.fit(X_train_scaled, y_train)
+
+# Uzyskanie prawdopodobieństw przynależności do każdej z klas
+y_proba = tree_best.predict_proba(X_test_scaled)
+
+# Lista progów od 0.01 do 0.2 z krokiem 0.01
+thresholds = np.arange(0.01, 0.2, 0.01)
+far_list = []
+frr_list = []
+
+for threshold in thresholds:
+    total_FAR = 0
+    total_FRR = 0
+    total_impostor_attempts = 0
+    total_genuine_attempts = 0
+    
+    for i in range(len(X_test_scaled)):
+        actual_class = y_test[i]
+        probas = y_proba[i]
+        
+        for idx, cls in enumerate(tree_best.classes_):
+            prob = probas[idx]
+            if cls == actual_class:
+                total_genuine_attempts += 1
+                if prob < threshold:
+                    total_FRR += 1  # Fałszywe odrzucenie
+            else:
+                total_impostor_attempts += 1
+                if prob >= threshold:
+                    total_FAR += 1  # Fałszywa akceptacja
+    
+    FAR = (total_FAR / total_impostor_attempts) * 100 if total_impostor_attempts > 0 else 0
+    FRR = (total_FRR / total_genuine_attempts) * 100 if total_genuine_attempts > 0 else 0
+
+    TP = total_genuine_attempts - total_FRR
+    TN = total_impostor_attempts - total_FAR
+    FP = total_FAR
+    FN = total_FRR
+
+    # Precision = TP / (TP + FP)
+    if (TP + FP) > 0:
+        precision = TP / (TP + FP)
+    else:
+        precision = 0
+
+    # Recall = TP / (TP + FN)
+    if (TP + FN) > 0:
+        recall = TP / (TP + FN)
+    else:
+        recall = 0
+
+    # F1-score = 2 x (Precision x Recall) / (Precision + Recall)
+    if (precision + recall) > 0:
+        f1_score = (2 * (precision * recall)) / (precision + recall)
+    else:
+        f1_score = 0
+
+    # Accuracy = (TP + TN) / (TP + TN + FP + FN)
+    accuracy = (TP + TN) / (TP + TN + FP + FN) if (TP + TN + FP + FN) > 0 else 0
+
+    print(f"The best max_depth value: {best_depth}, Threshold: {threshold:.2f}")
+    print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
+    print(f"Total FAR: {FAR:.2f}%, Total FRR: {FRR:.2f}%")
+    print(f"Precision = {precision*100:.2f}%, Recall = {recall*100:.2f}%, F1-score = {f1_score*100:.2f}%")
+    print(f"Accuracy: {accuracy*100:.2f}%")
+    print("")
+
+    far_list.append(FAR)
+    frr_list.append(FRR)
+
+# Znalezienie EER (gdzie FAR jest najbliżone do FRR)
+differences = np.abs(np.array(far_list) - np.array(frr_list))
+min_index = np.argmin(differences)
+eer_threshold = thresholds[min_index]
+eer = (far_list[min_index] + frr_list[min_index]) / 2
+
+print(f"\nEqual Error Rate (EER): {eer:.2f}% przy progu {eer_threshold:.2f}")
+
+results = pd.DataFrame({
+    'threshold': thresholds,
+    'far': far_list,
+    'frr': frr_list
+})
+
+# Rysowanie wykresu FAR i FRR w zależności od progu z zaznaczeniem punktu EER
+plt.figure(figsize=(10, 5))
+plt.plot(results['threshold'], results['far'], label='FAR (%)', marker='o', color='orange')
+plt.plot(results['threshold'], results['frr'], label='FRR (%)', marker='x', color='green')
+plt.xlabel('Probability Threshold')
+plt.ylabel('Error Rate (%)')
+plt.title('FAR and FRR vs Probability Threshold')
+plt.legend()
+plt.grid(True)
+
+# Narysowanie punktu EER na wykresie
+plt.plot(eer_threshold, eer, 'ro', label='EER Point')
+plt.annotate(f'EER = {eer:.2f}%\nThreshold = {eer_threshold:.2f}',
+             (eer_threshold, eer),
+             textcoords="offset points",
+             xytext=(0,10),
+             ha='center',
+             color='red')
+
+plt.legend()
+plt.tight_layout()
 plt.show()
