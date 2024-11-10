@@ -83,11 +83,18 @@ def process_user(user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_ma
     FRR_count = 0
     N_genuine_attempts = 0
 
+    # 19 podpisów nadmiarowych + (5 podpisów testowych * 56 klas) = 299 prób
+    # N_genuine_attempts = 299
+
     for filename in signature_filenames:
         file_path = os.path.join(extracted_features_dir, filename)
 
         with open(file_path, "r") as feature_file:
             signature_data = [[float(x) for x in line.strip().split(", ")] for line in feature_file]
+
+        # FRR = FN / (FN + TP)
+        # N_genuine_attempts == (FN + TP)
+        # FRR_count == FN
 
         N_genuine_attempts += 1
 
@@ -98,6 +105,9 @@ def process_user(user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_ma
     # Comparing user signatures to profiles of other users - checking the FAR error
     FAR_count = 0
     N_impostor_attempts = 0
+
+    # (19 podpisów nadmiarowych + (5 podpisów testowych * 56 klas)) * 55 =  16445 prób
+    # N_genuine_attempts = 299
     
     for filename in signature_filenames:
         file_path = os.path.join(extracted_features_dir, filename)
@@ -112,6 +122,10 @@ def process_user(user_num, profiles, parent_dir, sigma_num, mean_t_of_feature_ma
                 continue
             
             N_impostor_attempts += 1
+
+            # FAR = FP / (FP + TN)
+            # N_impostor_attempts == (FP + TN)
+            # FAR_count == FP
 
             if is_signature_genuine(other_profile_data, signature_data, sigma_num, mean_t_of_feature_matches_threshold, genuine_features_threshold):
                 FAR_count += 1
@@ -177,6 +191,9 @@ if choice == 'range':
                     total_FAR_count += FAR_count
                     total_N_genuine_attempts += N_genuine_attempts
                     total_N_impostor_attempts += N_impostor_attempts
+                
+                total_TP = total_N_genuine_attempts - total_FRR_count
+                total_TN = total_N_impostor_attempts - total_FAR_count
 
                 # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
                 # Calculate the average FRR and FAR error values for the entire system
@@ -189,9 +206,28 @@ if choice == 'range':
                     FAR_rate = (total_FAR_count / total_N_impostor_attempts) * 100
                 else:
                     FAR_rate = 0.0
+
+                # Precision = TP / (TP + FP)
+                # Jak wiele z przewidzianych pozytywnie przypadków jest rzeczywiście pozytywnych
+                # How many of the positively predicted cases are actually positive
+                if (total_TP + total_FAR_count) > 0:
+                    precision = total_TP / (total_TP + total_FAR_count)
+
+                # Recall = TP / (TP + FN)
+                # Jak wiele z rzeczywistych pozytywnych przypadków zostało prawidłowo wykrytych przez model
+                # How many of the actual positive cases were correctly detected by the model
+                if (total_TP + total_FRR_count) > 0:
+                    recall = total_TP / (total_TP + total_FRR_count)
+                
+                # F1-score = 2 x (Precision x Recall) / (Precision + Recall)
+                # Harmoniczna średnia Precision i Recall
+                # Harmonic Mean Precision and Recall
+                if (precision + recall) > 0:
+                    f1_score = (2 * (precision * recall))/(precision + recall)
                 
                 print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}") 
                 print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
+                print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
 
                 result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
 
@@ -217,6 +253,11 @@ elif choice == 'all':
                         total_N_genuine_attempts += N_genuine_attempts
                         total_N_impostor_attempts += N_impostor_attempts
 
+                total_TP = total_N_genuine_attempts - total_FRR_count
+                total_TN = total_N_impostor_attempts - total_FAR_count
+
+                print(f"TP: {total_TP}, TN:{total_TN}, FP: {total_FAR_count}, FN: {total_FRR_count}")
+
                 # Obliczenie wartości średniego błędu FRR i FAR dla całego systemu
                 # Calculate the average FRR and FAR error values for the entire system
                 if total_N_genuine_attempts > 0:
@@ -229,10 +270,38 @@ elif choice == 'all':
                 else:
                     FAR_rate = 0.0
 
+
+                # Precision = TP / (TP + FP)
+                # Jak wiele z przewidzianych pozytywnie przypadków jest rzeczywiście pozytywnych
+                # How many of the positively predicted cases are actually positive
+                if (total_TP + total_FAR_count) > 0:
+                    precision = total_TP / (total_TP + total_FAR_count)
+
+                # Recall = TP / (TP + FN)
+                # Jak wiele z rzeczywistych pozytywnych przypadków zostało prawidłowo wykrytych przez model
+                # How many of the actual positive cases were correctly detected by the model
+                if (total_TP + total_FRR_count) > 0:
+                    recall = total_TP / (total_TP + total_FRR_count)
+                
+                # F1-score = 2 x (Precision x Recall) / (Precision + Recall)
+                # Harmoniczna średnia Precision i Recall
+                # Harmonic Mean Precision and Recall
+                if (precision + recall) > 0:
+                    f1_score = (2 * (precision * recall))/(precision + recall)
+
+                # Accuracy = (TP + TN) / (TP + TN + FP + FN)
+                # Jak wiele przypadków zostało sklasyfikowanych poprawnie
+                # How many cases were classified correctly
+                accuracy = (total_TP + total_TN) / (total_TP + total_TN + total_FAR_count + total_FRR_count)
+
                 print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}") 
                 print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
-
+                print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
+                print(f"Accuracy: {(accuracy*100):.2f}%")
+                
                 result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
+
+                print(" ")
 else:
     print("Invalid choice. Please enter 'range' or 'all'.")
         
