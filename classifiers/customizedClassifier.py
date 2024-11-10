@@ -304,7 +304,7 @@ elif choice == 'all':
                 accuracy = (TP + TN) / (TP + TN + FP + FN)
 
                 print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}")
-                print(f"TP: {TP}, TN:{TN}, FP: {FP}, FN: {FN}")
+                print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
                 print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
                 print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
                 print(f"Accuracy: {(accuracy*100):.2f}%")

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -79,47 +80,104 @@ scaler = PowerTransformer()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-for k in range(1, 21):
-    # Trening klasyfikatora KNN
-    knn = KNeighborsClassifier(n_neighbors=k, weights='distance')  # Możesz eksperymentować z liczbą sąsiadów
-    knn.fit(X_train_scaled, y_train)
+# Definiowanie zakresu K
+param_grid = {'n_neighbors': list(range(1, 21))}
 
-    # Predykcja na zbiorze testowym
-    y_pred = knn.predict(X_test_scaled)
+# Inicjalizacja klasyfikatora KNN
+knn = KNeighborsClassifier(weights='distance')
 
-    # Obliczanie macierzy konfuzji
-    conf_matrix = confusion_matrix(y_test, y_pred, labels=subjects)
+# Inicjalizacja GridSearchCV
+grid_search = GridSearchCV(
+    estimator=knn,
+    param_grid=param_grid,
+    cv=5,  # liczba podziałów w cross-validation
+    scoring='accuracy',  # możesz dostosować metrykę
+    n_jobs=-1  # użyj wszystkich dostępnych rdzeni procesora
+)
 
-    if k == 1:
-        # Wyświetlanie macierzy konfuzji
-        disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=subjects)
-        fig, ax = plt.subplots(figsize=(12, 10))
-        disp.plot(cmap=plt.cm.Blues, xticks_rotation=45, ax=ax)
-        plt.title('Confusion Matrix')
-        plt.show()
+# Przeprowadzenie Grid Search
+grid_search.fit(X_train_scaled, y_train)
 
-    # True Positives (TP)
-    TP = np.diag(conf_matrix)
-    # False Negatives (FN)
-    FN = np.sum(conf_matrix, axis=1) - TP
-    # False Positives (FP)
-    FP = np.sum(conf_matrix, axis=0) - TP
-    # True Negatives (TN)
-    TN = np.sum(conf_matrix) - (TP + FP + FN)
+# Najlepsza wartość K
+best_k = grid_search.best_params_['n_neighbors']
 
-    # FAR i FRR
-    FAR = sum(FP) / (sum(FP) + sum(TN))
-    FRR = sum(FN) / (sum(TP) + sum(FN))
+# Trenowanie KNN z najlepszym K
+knn_best = KNeighborsClassifier(n_neighbors=3, weights='distance')
+knn_best.fit(X_train_scaled, y_train)
 
-    # Precision, Recall, F1-score, Accuracy
-    precision = sum(TP) / (sum(TP) + sum(FP))
-    recall = sum(TP) / (sum(TP) + sum(FN))
-    f1_score = 2 * (precision * recall)/(precision + recall)
-    accuracy = (sum(TP) + sum(TN)) / (sum(TP) + sum(TN) + sum(FP) + sum(FN))
+# Ustal próg prawdopodobieństwa
+probability_threshold = 0.1  # Możesz dostosować tę wartość
 
-    print(f"K = {k}")
-    print(f"TP: {sum(TP)}, TN:{sum(TN)}, FP: {sum(FP)}, FN: {sum(FN)}")
-    print(f"Total FAR: {FAR:.2f}%, Total FRR: {FRR:.2f}%")
-    print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
-    print(f"Accuracy: {(accuracy*100):.2f}%")
-    print("")
+# Uzyskanie prawdopodobieństw przynależności do każdej z klas
+# Przykładowo sprawdza podpis testowy nr 1 i zwraca prawdopodobieństwo przynależności do każdej z klas
+y_proba = knn_best.predict_proba(X_test_scaled)
+
+# Przechowywanie decyzji dla każdego podpisu testowego
+test_decisions = []
+
+for i in range(len(X_test_scaled)):
+    sample_decisions = {}
+    for idx, cls in enumerate(knn_best.classes_):
+        prob = y_proba[i][idx]
+        if prob >= probability_threshold:
+            sample_decisions[cls] = True  # Należy do klasy
+        else:
+            sample_decisions[cls] = False  # Nie należy do klasy
+    test_decisions.append(sample_decisions)
+
+# Obliczanie FAR i FRR
+total_FAR = 0
+total_FRR = 0
+total_impostor_attempts = 0
+total_genuine_attempts = 0
+
+# Sprawdzam decyzje dla każdego podpisu testowego porównywanego z prawdziwą klasą i 55 złymi klasami
+for i, decisions in enumerate(test_decisions):
+    actual_class = y_test[i]
+    for cls, decision in decisions.items():
+        if cls == actual_class:
+            total_genuine_attempts += 1
+            if not decision:
+                total_FRR += 1  # Fałszywe odrzucenie
+        else:
+            total_impostor_attempts += 1
+            if decision:
+                total_FAR += 1  # Fałszywa akceptacja
+
+FAR = total_FAR / total_impostor_attempts if total_impostor_attempts > 0 else 0
+FRR = total_FRR / total_genuine_attempts if total_genuine_attempts > 0 else 0
+
+TP = total_genuine_attempts - total_FRR
+TN = total_impostor_attempts - total_FAR
+FP = total_FAR
+FN = total_FRR
+
+# Precision = TP / (TP + FP)
+# Jak wiele z przewidzianych pozytywnie przypadków jest rzeczywiście pozytywnych
+# How many of the positively predicted cases are actually positive
+if (TP + FP) > 0:
+    precision = TP / (TP + FP)
+
+# Recall = TP / (TP + FN)
+# Jak wiele z rzeczywistych pozytywnych przypadków zostało prawidłowo wykrytych przez model
+# How many of the actual positive cases were correctly detected by the model
+if (TP + FN) > 0:
+    recall = TP / (TP + FN)
+
+# F1-score = 2 x (Precision x Recall) / (Precision + Recall)
+# Harmoniczna średnia Precision i Recall
+# Harmonic Mean Precision and Recall
+if (precision + recall) > 0:
+    f1_score = (2 * (precision * recall))/(precision + recall)
+
+# Accuracy = (TP + TN) / (TP + TN + FP + FN)
+# Jak wiele przypadków zostało sklasyfikowanych poprawnie
+# How many cases were classified correctly
+accuracy = (TP + TN) / (TP + TN + FP + FN)
+
+print(f"The best K value: {best_k}")
+print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
+print(f"Total FAR: {(FAR*100):.2f}%, Total FRR: {(FRR*100):.2f}%")
+print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
+print(f"Accuracy: {(accuracy*100):.2f}%")
+print("")
