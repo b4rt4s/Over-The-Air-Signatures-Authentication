@@ -224,10 +224,17 @@ if choice == 'range':
                 # Harmonic Mean Precision and Recall
                 if (precision + recall) > 0:
                     f1_score = (2 * (precision * recall))/(precision + recall)
-                
+
+                # Accuracy = (TP + TN) / (TP + TN + FP + FN)
+                # Jak wiele przypadków zostało sklasyfikowanych poprawnie
+                # How many cases were classified correctly
+                accuracy = (total_TP + total_TN) / (total_TP + total_TN + total_FAR_count + total_FRR_count)
+
                 print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}") 
                 print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
                 print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
+                print(f"Accuracy: {(accuracy*100):.2f}%")
+                print(" ")
 
                 result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
 
@@ -298,10 +305,9 @@ elif choice == 'all':
                 print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
                 print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
                 print(f"Accuracy: {(accuracy*100):.2f}%")
-                
-                result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
-
                 print(" ")
+
+                result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
 else:
     print("Invalid choice. Please enter 'range' or 'all'.")
         
