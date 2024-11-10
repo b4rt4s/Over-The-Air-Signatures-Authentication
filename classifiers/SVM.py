@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, precision_score, recall_score, f1_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, Normalizer, QuantileTransformer, PowerTransformer
 from sklearn.model_selection import GridSearchCV
 
@@ -92,6 +92,7 @@ TN = np.sum(conf_matrix) - (TP + FP + FN)
 FAR = sum(FP) / (sum(FP) + sum(TN))
 FRR = sum(FN) / (sum(TP) + sum(FN))
 
+print(f"TP: {sum(TP)}, TN:{sum(TN)}, FP: {sum(FP)}, FN: {sum(FN)}")
 print(f"FAR = {round(FAR, 3)*100}%", f"FRR = {round(FRR, 3)*100}%")
 
 # Wyświetlanie macierzy konfuzji
