@@ -79,7 +79,7 @@ scaler = PowerTransformer()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-for k in range(1, 20):
+for k in range(1, 21):
     # Trening klasyfikatora KNN
     knn = KNeighborsClassifier(n_neighbors=k, weights='distance')  # Możesz eksperymentować z liczbą sąsiadów
     knn.fit(X_train_scaled, y_train)
@@ -98,7 +98,6 @@ for k in range(1, 20):
         plt.title('Confusion Matrix')
         plt.show()
 
-    # Obliczanie FAR i FRR
     # True Positives (TP)
     TP = np.diag(conf_matrix)
     # False Negatives (FN)
@@ -112,4 +111,15 @@ for k in range(1, 20):
     FAR = sum(FP) / (sum(FP) + sum(TN))
     FRR = sum(FN) / (sum(TP) + sum(FN))
 
-    print(f"FAR = {round(FAR*100, 3)}%, FRR = {round(FRR*100, 3)}%")
+    # Precision, Recall, F1-score, Accuracy
+    precision = sum(TP) / (sum(TP) + sum(FP))
+    recall = sum(TP) / (sum(TP) + sum(FN))
+    f1_score = 2 * (precision * recall)/(precision + recall)
+    accuracy = (sum(TP) + sum(TN)) / (sum(TP) + sum(TN) + sum(FP) + sum(FN))
+
+    print(f"K = {k}")
+    print(f"TP: {sum(TP)}, TN:{sum(TN)}, FP: {sum(FP)}, FN: {sum(FN)}")
+    print(f"Total FAR: {FAR:.2f}%, Total FRR: {FRR:.2f}%")
+    print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
+    print(f"Accuracy: {(accuracy*100):.2f}%")
+    print("")
