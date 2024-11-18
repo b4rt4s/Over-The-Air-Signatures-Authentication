@@ -4,7 +4,7 @@ import os
 import datetime
 
 
-class AirSigning:
+class airSigning:
     def __init__(self, handDetector, defaultCam=0):
         self.primaryCam = defaultCam
         self.camHeight, self.camWidth = 720, 1280
