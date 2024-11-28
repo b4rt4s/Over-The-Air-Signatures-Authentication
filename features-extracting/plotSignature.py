@@ -2,6 +2,21 @@ import re
 import matplotlib.pyplot as plt
 import os
 
+def split_points(xy_list, num_parts):
+    N = len(xy_list)
+    base_size = N // num_parts
+    remainder = N % num_parts
+    sublists = []
+    start = 0
+
+    for i in range(num_parts):
+        end = start + base_size
+        if i < remainder:
+            end += 1
+        sublists.append(xy_list[start:end])
+        start = end
+    return sublists
+
 directory = int(input("Enter directory number to read: "))
 parent_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -124,7 +139,7 @@ with open(normalized_filename, "r") as file:
 
 # Przygotowanie jednej wspólnej przestrzeni do wyświetlenia 5 wykresów.
 # Prepare one common space to display 5 plots.
-fig, axs = plt.subplots(5, 1, figsize=(10, 25))
+fig, axs = plt.subplots(6, 1, figsize=(10, 10))
 
 # Wykres nr 1 - punkty z folderu fixed-signs.
 # Plot 1 - points from fixed-signs.
@@ -152,22 +167,77 @@ axs[2].set_ylabel("y - axis")
 
 # Wykres nr 4 - punkty z folderu normalized-signs.
 # Plot 4 - points from normalized-signs.
-x_vals_normalized, y_vals_normalized = zip(*normalized_xy_list)  # Unpacking list into x and y
+x_vals_normalized, y_vals_normalized = zip(*normalized_xy_list)
 axs[3].scatter(x_vals_normalized, y_vals_normalized, marker="o", color="purple", s=1)
 axs[3].set_title("Points from normalized-signs")
 axs[3].set_xlabel("x - axis")
 axs[3].set_ylabel("y - axis")
 
-# Wykres nr 5 - naniesienie na siebie punktów z folderów fixed-signs, cleared-signs, interpolated-signs, normalized-signs.
-# Plot 5 - overlaying points from fixed-signs, cleared-signs, interpolated-signs, normalized-signs.
-axs[4].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
-axs[4].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
-axs[4].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1, label="interpolated-signs")
-axs[4].scatter(x_vals_normalized, y_vals_normalized, marker="o", color="purple", s=1, label="normalized-signs")
-axs[4].set_title("Combined points from fixed-signs, cleared-signs, interpolated-signs, and normalized-signs")
+# Podział normalized_xy_list na sublisty
+# Splitting normalized_xy_list into sublists
+num_parts = 20
+sublists = split_points(normalized_xy_list, num_parts)
+
+# Wykres nr 5 - punkty z folderu normalized-signs z podziałami czasowymi
+# Plot 5 - points from normalized-signs with time splits
+markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p', 'h', '*', '+', 'x', '|', '_']
+colors = ['red', 'green', 'blue', 'orange', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'brown']
+
+for idx, sublist in enumerate(sublists):
+    x_vals_split, y_vals_split = zip(*sublist)
+    color = colors[idx % len(colors)]
+    marker_style = markers[(idx // len(colors)) % len(markers)]
+    axs[4].scatter(x_vals_split, y_vals_split, marker=marker_style, color=color, s=1)
+
+# Obliczenie indeksów punktów, gdzie następują podziały
+split_indices = []
+start = 0
+N = len(normalized_xy_list)
+base_size = N // num_parts
+remainder = N % num_parts
+
+for i in range(num_parts):
+    end = start + base_size
+    if i < remainder:
+        end += 1
+    if end < N:
+        split_indices.append(end)
+    start = end
+
+# Dodanie linii pionowych w miejscach podziałów
+for idx in split_indices:
+    x_split = normalized_xy_list[idx][0]
+    axs[4].axvline(x=x_split, color='red', linestyle='--', linewidth=0.5)
+
+def split_points(xy_list, num_parts):
+    N = len(xy_list)
+    base_size = N // num_parts
+    remainder = N % num_parts
+    sublists = []
+    start = 0
+
+    for i in range(num_parts):
+        end = start + base_size
+        if i < remainder:
+            end += 1
+        sublists.append(xy_list[start:end])
+        start = end
+    return sublists
+
+axs[4].set_title("Points from normalized-signs with splits")
 axs[4].set_xlabel("x - axis")
 axs[4].set_ylabel("y - axis")
-axs[4].legend()
+
+# Wykres nr 6 - naniesienie na siebie punktów z folderów fixed-signs, cleared-signs, interpolated-signs, normalized-signs.
+# Plot 6 - overlaying points from fixed-signs, cleared-signs, interpolated-signs, normalized-signs.
+axs[5].scatter(x_vals_fixed, y_vals_fixed, marker="o", color="blue", s=1, label="fixed-signs")
+axs[5].scatter(x_vals_cleared, y_vals_cleared, marker="o", color="green", s=1, label="cleared-signs")
+axs[5].scatter(x_vals_interpolated, y_vals_interpolated, marker="o", color="red", s=1, label="interpolated-signs")
+axs[5].scatter(x_vals_normalized, y_vals_normalized, marker="o", color="purple", s=1, label="normalized-signs")
+axs[5].scatter(x_vals_split, y_vals_split, marker="o", color="purple", s=1, label="split-normalized-signs")
+axs[5].set_title("Combined points from fixed-signs, cleared-signs, interpolated-signs, and normalized-signs")
+axs[5].set_xlabel("x - axis")
+axs[5].set_ylabel("y - axis")
 
 # Wyświetlenie wykresów.
 # Display plots.
