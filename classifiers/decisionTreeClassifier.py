@@ -1,10 +1,8 @@
 import os
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import PowerTransformer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, Normalizer, QuantileTransformer, PowerTransformer
 import pandas as pd
 
 # Przygotowanie danych
@@ -68,31 +66,12 @@ X_test = np.array(test_data)
 y_test = np.array(test_labels)
 
 # Normalizacja danych
-scaler = PowerTransformer()
+scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Definiowanie zakresu max_depth
-param_grid = {'max_depth': list(range(1, 21))}
-
-# Inicjalizacja klasyfikatora drzewa decyzyjnego
-tree = DecisionTreeClassifier(random_state=42)
-
-# Inicjalizacja GridSearchCV
-grid_search = GridSearchCV(
-    estimator=tree,
-    param_grid=param_grid,
-    cv=5,  # liczba podziałów w cross-validation
-    scoring='accuracy',  # można dostosować metrykę
-    n_jobs=-1  # użycie wszystkich dostępnych rdzeni procesora
-)
-
-# Przeprowadzenie Grid Search
-grid_search.fit(X_train_scaled, y_train)
-
-# Najlepsza wartość max_depth
-best_depth = grid_search.best_params_['max_depth']
-best_depth = 3
+# Najlepsze max_depth
+best_depth = 2
 
 # Trenowanie drzewa decyzyjnego z najlepszym max_depth
 tree_best = DecisionTreeClassifier(max_depth=best_depth, random_state=42)
@@ -101,8 +80,8 @@ tree_best.fit(X_train_scaled, y_train)
 # Uzyskanie prawdopodobieństw przynależności do każdej z klas
 y_proba = tree_best.predict_proba(X_test_scaled)
 
-# Lista progów od 0.01 do 0.2 z krokiem 0.01
-thresholds = np.arange(0.01, 0.2, 0.01)
+# Lista progów od 0.01 do 0.05 z krokiem 0.0005
+thresholds = np.arange(0.01, 0.05, 0.005)
 far_list = []
 frr_list = []
 
@@ -136,27 +115,35 @@ for threshold in thresholds:
     FN = total_FRR
 
     # Precision = TP / (TP + FP)
+    # Jak wiele z przewidzianych pozytywnie przypadków jest rzeczywiście pozytywnych
+    # How many of the positively predicted cases are actually positive
     if (TP + FP) > 0:
         precision = TP / (TP + FP)
     else:
         precision = 0
 
     # Recall = TP / (TP + FN)
+    # Jak wiele z rzeczywistych pozytywnych przypadków zostało prawidłowo wykrytych przez model
+    # How many of the actual positive cases were correctly detected by the model
     if (TP + FN) > 0:
         recall = TP / (TP + FN)
     else:
         recall = 0
 
     # F1-score = 2 x (Precision x Recall) / (Precision + Recall)
+    # Harmoniczna średnia Precision i Recall
+    # Harmonic Mean Precision and Recall
     if (precision + recall) > 0:
-        f1_score = (2 * (precision * recall)) / (precision + recall)
+        f1_score = (2 * (precision * recall))/(precision + recall)
     else:
         f1_score = 0
 
     # Accuracy = (TP + TN) / (TP + TN + FP + FN)
+    # Jak wiele przypadków zostało sklasyfikowanych poprawnie
+    # How many cases were classified correctly
     accuracy = (TP + TN) / (TP + TN + FP + FN) if (TP + TN + FP + FN) > 0 else 0
 
-    print(f"The best max_depth value: {best_depth}, Threshold: {threshold:.2f}")
+    print(f"The best max_depth value: {best_depth}, Threshold: {threshold:.3f}")
     print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
     print(f"Total FAR: {FAR:.2f}%, Total FRR: {FRR:.2f}%")
     print(f"Precision = {precision*100:.2f}%, Recall = {recall*100:.2f}%, F1-score = {f1_score*100:.2f}%")
@@ -172,7 +159,7 @@ min_index = np.argmin(differences)
 eer_threshold = thresholds[min_index]
 eer = (far_list[min_index] + frr_list[min_index]) / 2
 
-print(f"\nEqual Error Rate (EER): {eer:.2f}% przy progu {eer_threshold:.2f}")
+print(f"\nEqual Error Rate (EER): {eer:.3f}% with threshold {eer_threshold:.3f}")
 
 results = pd.DataFrame({
     'threshold': thresholds,
@@ -192,7 +179,7 @@ plt.grid(True)
 
 # Narysowanie punktu EER na wykresie
 plt.plot(eer_threshold, eer, 'ro', label='EER Point')
-plt.annotate(f'EER = {eer:.2f}%\nThreshold = {eer_threshold:.2f}',
+plt.annotate(f'EER = {eer:.2f}%\nThreshold = {eer_threshold:.3f}',
              (eer_threshold, eer),
              textcoords="offset points",
              xytext=(0,10),

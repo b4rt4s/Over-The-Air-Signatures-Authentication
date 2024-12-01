@@ -103,7 +103,7 @@ def average_acceleration(points, times):
     if len(points) < 3 or len(times) < 3:
         return 0
     
-    # Obliczanie prędkości między kolejnymi punktami
+    # Obliczanie szybkości między kolejnymi punktami
     # Compute the speed between consecutive points
     speeds = []
     speeds_times = []
@@ -417,13 +417,13 @@ def process_directory(directory, selected_numbers, selected_features, num_parts)
             for i in range(len(sublists)):
                 feature_values = []
                 for feature_num in selected_features:
-                    feature_values.append(features_for_sign[feature_num][i])
+                    feature_values.append(features_for_sign[feature_num][i]) # wypełniamy to, T1 wartościami V1, V1, V1, V1, V1, V1, V1, V1, V1, V1
                 feature_file.write(", ".join(map(str, feature_values)) + "\n")
 
         if filename in selected_filenames:
             for feature_num in selected_features:
                 selected_signs_features[feature_num].append(features_for_sign[feature_num])
-        
+                # mamy tak: t1(dla c1), t2, t3, t4, ..., t1(dla c2), t2, t3, t4
     # Transpozycja list cech dla wylosowanych podpisów, aby wierszami były czasy, a kolumnami cechy
     # Transposition of feature lists for randomly selected signatures so that the rows are times and the columns are features
     transposed_features = {}

@@ -53,18 +53,18 @@ for file in data_files:
 best_eer = min(eer_list)
 best_file = data_files[eer_list.index(best_eer)]
 
-print(f"\nThe best EER {best_eer:.2f}% in {best_file}")
+print(f"\nNajniższe EER {best_eer:.2f}% w {best_file}")
 
 # Wyświetlenie plików do wyboru
 # Displaying files to choose from
-print("\nAvailable files to plot:")
+print("\nDostępne pliki, dla których można wyświetlić wykres:")
 
 for index, file in enumerate(data_files):
     print(f"{index+1}: {file}")
 
 # Wybranie pliku do wyświetlenia
 # Choosing a file to display
-selected_index = int(input("\nChoose number of file to plot: ")) - 1
+selected_index = int(input("\nWybierz plik, którego wykres chcesz wyświetlić: ")) - 1
 
 if selected_index < 0 or selected_index >= len(data_files):
     print("Incorrect selection.")
@@ -118,29 +118,32 @@ if os.path.exists(selected_numbers_file):
 # Rysowanie wykresu FAR i FRR w zależności od progu z zaznaczeniem punktu EER
 # Drawing a graph of FAR and FRR depending on the threshold with the EER point marked
 plt.figure(figsize=(10, 5))
-plt.plot(data['threshold'], data['far'], label='FAR in (%)', marker='o', color='orange')
-plt.plot(data['threshold'], data['frr'], label='FRR in (%)', marker='x', color='green')
-plt.xlabel('Number of genuine features (number of matches)')
-plt.ylabel('Error Rate (%)')
+plt.plot(data['threshold'], data['far'], label='FAR w (%)', marker='o', color='orange')
+plt.plot(data['threshold'], data['frr'], label='FRR w (%)', marker='x', color='green')
+plt.xlabel('Próg minimalnej liczby zgodnych cech', fontsize=12)
+plt.ylabel('Wskaźnik błędu (%)', fontsize=12)
 
 # Dodanie dodatkowych informacji w tytule wykresu lub podtytule
-title = 'FAR and FRR depending on the genuine features threshold (number of matches)'
-subtitle = (f"Used signatures to create profile by their numbers: {training_signature_numbers}\n"
-            f"Threshold #1: Selected features by their numbers: {feature_numbers}\n"
-            f"Threshold #2: Division of signatures into time section:  {num_parts}\n"
-            f"Threshold #3: Standard deviations multiplied by: {sigma_multiplier}\n"
-            f"Threshold #4: Mean of matched features from time divisions per feature: {mean_t_of_feature_matches_threshold}\n"
-            f"Threshold #5: Number of genuine features: {genuine_features_thresholds}")
+title = 'Współczynniki błędów FAR i FRR w zależności od progu minimalnej liczby zgodnych cech'
+subtitle = (f"Numery podpisów użytych użytych do zbioru uczącego i zbudowania profili: {training_signature_numbers}\n"
+            f"Próg decyzyjny #1: Numery wybranych cech: {feature_numbers}\n"
+            f"Próg decyzyjny #2: Liczba podziałów czasowych dla danej sygnatury:  {num_parts}\n"
+            f"Próg decyzyjny #3: Wielokrotność odchylenia standardowego: {sigma_multiplier}\n"
+            f"Próg decyzyjny #4: Średnia zgodność metryk na cechę: {mean_t_of_feature_matches_threshold}\n"
+            f"Próg decyzyjny #5: Minimalne liczby zgodnych cech: {genuine_features_thresholds}")
 
-plt.title(title)
-plt.suptitle(subtitle, fontsize=10)
-plt.legend()
+plt.title(title, fontsize=12)
+plt.suptitle(subtitle, fontsize=12)
+plt.legend(fontsize=12)
 plt.grid(True)
 
 # Narysowanie punktu EER na wykresie
 # Drawing the EER point on the chart
 plt.plot(EER_threshold, EER, 'ro')
-plt.annotate(f'EER = {EER:.2f}%', (EER_threshold, EER), textcoords="offset points", xytext=(0,10), ha='center')
+plt.annotate(f'EER = {EER:.2f}%', (EER_threshold, EER), textcoords="offset points", xytext=(0,10), ha='center', fontsize=12)
+
+plt.tick_params(axis='x', labelsize=11)
+plt.tick_params(axis='y', labelsize=11)  
 
 plt.tight_layout()
 plt.show()

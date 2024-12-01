@@ -1,8 +1,6 @@
 import os
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, Normalizer, QuantileTransformer, PowerTransformer
 import pandas as pd
@@ -68,40 +66,21 @@ X_test = np.array(test_data)
 y_test = np.array(test_labels)
 
 # Normalizacja danych
-scaler = PowerTransformer()
+scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Definiowanie zakresu K
-param_grid = {'n_neighbors': list(range(1, 21))}
-
-# Inicjalizacja klasyfikatora KNN
-knn = KNeighborsClassifier(weights='distance')
-
-# Inicjalizacja GridSearchCV
-grid_search = GridSearchCV(
-    estimator=knn,
-    param_grid=param_grid,
-    cv=5,  # liczba podziałów w cross-validation
-    scoring='accuracy',  # można dostosować metrykę
-    n_jobs=-1  # użycie wszystkich dostępnych rdzeni procesora
-)
-
-# Przeprowadzenie Grid Search
-grid_search.fit(X_train_scaled, y_train)
-
 # Najlepsza wartość K
-best_k = 11 
-best_k = grid_search.best_params_['n_neighbors']
+best_k = 10
 
 # Trenowanie KNN z najlepszym K
 knn_best = KNeighborsClassifier(n_neighbors=best_k, weights='distance')
 knn_best.fit(X_train_scaled, y_train)
 
-# Uzyskanie prawdopodobieństw przynależności do każdej z klas
+# Uzyskanie prawdopodobieństw przynależności do każdej z klas dla danych testowych
 y_proba = knn_best.predict_proba(X_test_scaled)
 
-# Lista progów od 0.01 do 1.00
+# Lista progów od 0.01 do 02. z krokiem 0.01
 thresholds = np.arange(0.01, 0.2, 0.01)
 far_list = []
 frr_list = []
@@ -112,12 +91,12 @@ for threshold in thresholds:
     total_impostor_attempts = 0
     total_genuine_attempts = 0
     
-    for i in range(len(X_test_scaled)):
-        actual_class = y_test[i]
-        probas = y_proba[i]
+    for i in range(len(X_test_scaled)): # Iteracja przez wszystkie próbki testowe
+        actual_class = y_test[i] # Rzeczywista klasa próbki
+        probas = y_proba[i] # Lista prawdopodobieństw przynależności do każdej z klas
         
-        for idx, cls in enumerate(knn_best.classes_):
-            prob = probas[idx]
+        for idx, cls in enumerate(knn_best.classes_): # Iteracja przez wszystkie klasy
+            prob = probas[idx] # Prawdopodobieństwo przynależności do klasy cls danej próbki
             if cls == actual_class:
                 total_genuine_attempts += 1
                 if prob < threshold:
@@ -127,8 +106,8 @@ for threshold in thresholds:
                 if prob >= threshold:
                     total_FAR += 1  # Fałszywa akceptacja
     
-    FAR = total_FAR / total_impostor_attempts if total_impostor_attempts > 0 else 0
-    FRR = total_FRR / total_genuine_attempts if total_genuine_attempts > 0 else 0
+    FAR = (total_FAR / total_impostor_attempts) * 100 if total_impostor_attempts > 0 else 0
+    FRR = (total_FRR / total_genuine_attempts) * 100 if total_genuine_attempts > 0 else 0
 
     TP = total_genuine_attempts - total_FRR
     TN = total_impostor_attempts - total_FAR
@@ -140,29 +119,35 @@ for threshold in thresholds:
     # How many of the positively predicted cases are actually positive
     if (TP + FP) > 0:
         precision = TP / (TP + FP)
+    else:
+        precision = 0
 
     # Recall = TP / (TP + FN)
     # Jak wiele z rzeczywistych pozytywnych przypadków zostało prawidłowo wykrytych przez model
     # How many of the actual positive cases were correctly detected by the model
     if (TP + FN) > 0:
         recall = TP / (TP + FN)
+    else:
+        recall = 0
 
     # F1-score = 2 x (Precision x Recall) / (Precision + Recall)
     # Harmoniczna średnia Precision i Recall
     # Harmonic Mean Precision and Recall
     if (precision + recall) > 0:
         f1_score = (2 * (precision * recall))/(precision + recall)
+    else:
+        f1_score = 0
 
     # Accuracy = (TP + TN) / (TP + TN + FP + FN)
     # Jak wiele przypadków zostało sklasyfikowanych poprawnie
     # How many cases were classified correctly
-    accuracy = (TP + TN) / (TP + TN + FP + FN)
+    accuracy = (TP + TN) / (TP + TN + FP + FN) if (TP + TN + FP + FN) > 0 else 0
 
-    print(f"The best K value: {best_k}, Threshold: {threshold:.2f}")
+    print(f"Wybrana wartość hiperparametru K: {best_k}, Próg prawdopodobieństwa przynależności do klasy: {threshold:.2f}")
     print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
-    print(f"Total FAR: {(FAR*100):.2f}%, Total FRR: {(FRR*100):.2f}%")
-    print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
-    print(f"Accuracy: {(accuracy*100):.2f}%")
+    print(f"FAR dla całego systemu: {FAR:.2f}%, FRR dla całego systemu: {FRR:.2f}%")
+    print(f"precyzja (ang. precision) = {precision*100:.2f}%, czułość (ang. recall) = {recall*100:.2f}%, F1-score = {f1_score*100:.2f}%")
+    print(f"dokładność (ang. accuracy): {accuracy*100:.2f}%")
     print("")
 
     far_list.append(FAR)
@@ -174,7 +159,7 @@ min_index = np.argmin(differences)
 eer_threshold = thresholds[min_index]
 eer = (far_list[min_index] + frr_list[min_index]) / 2
 
-print(f"\nEqual Error Rate (EER): {eer:.2f}% with threshold {eer_threshold:.2f}")
+print(f"\nBłąd zrównoważony (EER): {eer:.2f}% z progiem {eer_threshold:.2f}")
 
 results = pd.DataFrame({
     'threshold': thresholds,
@@ -186,20 +171,25 @@ results = pd.DataFrame({
 plt.figure(figsize=(10, 5))
 plt.plot(results['threshold'], results['far'], label='FAR (%)', marker='o', color='orange')
 plt.plot(results['threshold'], results['frr'], label='FRR (%)', marker='x', color='green')
-plt.xlabel('Probability Threshold')
-plt.ylabel('Error Rate (%)')
-plt.title('FAR and FRR vs Probability Threshold')
-plt.legend()
+plt.xlabel('Próg prawdopodobieństwa przynależności do klasy', fontsize=12)
+plt.ylabel('Wskaźnik błędu (%)', fontsize=12)
+plt.title('Współczynniki błędów FAR i FRR w zależności od progu prawdopodobieństwa przynależności do klasy', fontsize=12)
+plt.legend(fontsize=12)
 plt.grid(True)
 
+
 # Narysowanie punktu EER na wykresie
-plt.plot(eer_threshold, eer, 'ro', label='EER Point')
-plt.annotate(f'EER = {eer:.2f}%\nThreshold = {eer_threshold:.2f}',
+plt.plot(eer_threshold, eer, 'ro')
+plt.annotate(f'EER = {eer:.2f}%\nPróg decyzyjny = {eer_threshold:.2f}',
              (eer_threshold, eer),
              textcoords="offset points",
              xytext=(0,10),
              ha='center',
-             color='red')
+             color='black',
+             fontsize=12)
+
+plt.tick_params(axis='x', labelsize=11)
+plt.tick_params(axis='y', labelsize=11)  
 
 plt.legend()
 plt.tight_layout()

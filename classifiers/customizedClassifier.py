@@ -303,11 +303,11 @@ elif choice == 'all':
                 # How many cases were classified correctly
                 accuracy = (TP + TN) / (TP + TN + FP + FN)
 
-                print(f"Mean Matches Threshold: {mean_t_of_feature_matches_threshold:.1f}, Genuine Features Threshold: {genuine_features_threshold}")
+                print(f"Próg średniej zgodności metryk na cechę: {mean_t_of_feature_matches_threshold:.1f}, Próg minimalnej liczby zgodnych cech: {genuine_features_threshold}")
                 print(f"TP: {TP}, TN: {TN}, FP: {FP}, FN: {FN}")
-                print(f"Total FAR: {FAR_rate:.2f}%, Total FRR: {FRR_rate:.2f}%")
-                print(f"Precision = {(precision*100):.2f}%, Recall = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
-                print(f"Accuracy: {(accuracy*100):.2f}%")
+                print(f"FAR dla całego systemu: {FAR_rate:.2f}%, FRR dla całego systemu: {FRR_rate:.2f}%")
+                print(f"precyzja (ang. precision) = {(precision*100):.2f}%, czułość (ang. recall) = {(recall*100):.2f}%, F1-score = {(f1_score*100):.2f}%")
+                print(f"dokładność (ang. accuracy): {(accuracy*100):.2f}%")
                 print("")
 
                 result_file.write(f"{FAR_rate},{FRR_rate},{genuine_features_threshold}\n")
